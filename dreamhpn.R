@@ -18,13 +18,24 @@ S <- cor(D[, -(1:4)])
 B0 <- - 0.5 * diag(p) %*% solve(S)
 C0 <- diag(p)
 
-Best <- fproxgradB(Sigma = S,B = B0, C = C0, eps = 1e-10, 
-                   alpha = 0.5, maxIter = 1000, lambda = 0.1, job = 0)
+Best <- proxgradllB(Sigma = S,B = B0, C = C0, eps = 1e-10, 
+                   alpha = 0.5, maxIter = 1000, lambda = 0.1, job = 0)$B
 
 deltaGraph(t(trueGraph), Best,
            edge.arrow.size = 0.3, layout = layout_in_circle)
 
 hamming(t(trueGraph), Best)
+
+results <- llBpath(S, job = 11)
+B <- t(trueGraph)
+t(sapply(results, function(res) c(lambda = res$lambda, 
+                                  npar = sum(res$B!=0),
+                                  fp = sum(res$B!=0 & B==0),
+                                  tp = sum(res$B!=0 & B!=0) ,
+                                  fn = sum(res$B==0 & B!=0),
+                                  tn = sum(res$B==0 & B==0),
+                                  errs = sum(res$B!=0 & B==0) + 
+                                    sum(res$B==0 & B!=0))))
 ################# 
 S <- cor(D[, -(1:4)])
 Best <- - 0.5 * diag(p) %*% solve(S)
@@ -33,9 +44,9 @@ lambda <- 0.05
 N <- nrow(D)
 for (i in 1:100){
   S <- cor(D[sample(1:N, size = N, replace = TRUE), - (1:4)])
-  Best <-  fproxgradB(Sigma = S,B = Best, C = C0, eps = 1e-10, 
+  Best <-  proxgradllB(Sigma = S,B = Best, C = C0, eps = 1e-10, 
                       alpha = 0.5, maxIter = 100, lambda = lambda,
-                      job = 1)
+                      job = 1)$B
 }
 
 deltaGraph(t(trueGraph), Best,
@@ -65,13 +76,13 @@ res <- parSapply(cl = cl, X = 1:100, function(x){
   S <- cor(D[sample(1:nrow(D), replace = FALSE, size = nrow(D) / 2 ), 
              -(1:4)])
   B0 <- - 0.5 * diag(p) %*% solve(S)
-  B0[abs(S) < 0.1] <- 0
+  B0[abs(S) < 0.01] <- 0
   Cest <- diag(p)
 
-  Best <- fproxgradB(Sigma = S, C = Cest, B = B0,
+  Best <- proxgradllB(Sigma = S, C = Cest, B = B0,
                         lambda = 0.1, 
                         alpha = 0.5,eps = 1e-8, 
-                        maxIter = 100, job = 10)
+                        maxIter = 100, job = 11)$B
   return(Best)
 })
 
@@ -123,9 +134,9 @@ Btot <- matrix(nrow = p, ncol = p, 0)
 Btot2 <- (Btot)
 Btot2[Btot2 <= 0] <- 1e-6
 Btot2[Btot2 > 1] <- 1
-
-AUROC(Btot2, t(trueGraph), 100)
-roc2 <- (ROC(Btot2, t(trueGraph)))
+ix <- lower.tri(Btot) | upper.tri(Btot)
+AUROC(Btot2[ix], t(trueGraph)[ix], 100)
+roc2 <- ROC(Btot2[ix], t(trueGraph)[ix])
 
 ggplot(data=data.frame(roc2), aes(x= FPR, y= TPR)) +
   geom_line()+
