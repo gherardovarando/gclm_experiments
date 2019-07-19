@@ -115,8 +115,8 @@ rSkewSymm <- function(p, rfun = rnorm){
 
 #' Generate stable Metzler matrix
 #'
-#' @param p integere the dimension of the matrix
-#' @param d proportion of non zero entries
+#' @param n integer the dimension of the matrix
+#' @param p probability of non zero entries
 #' @param lower logical, should the matrix be lower triangular
 #' @param rfun the random number generator for the matrix entries
 #' @param rdiag the random number generator for the diagonal added error
@@ -126,17 +126,16 @@ rSkewSymm <- function(p, rfun = rnorm){
 #'
 #' @importFrom stats rnorm
 #' @export
-rStableMetzler <- function(p = 1, d = 1, lower = FALSE,
+rStableMetzler <- function(n = 1, p = 1, lower = FALSE,
                            rfun = rnorm, rdiag = rnorm){
-  if (lower) d <- d / 2
-  D <- abs(rfun(p * p)) * sample(c(0,1), replace = TRUE, size = p * p,
-                             prob = c(1 - d, d))
-  A <- matrix(nrow = p, ncol = p, data = D)
+  D <- abs(rfun(n * n)) * sample(c(0,1), replace = TRUE, size = n * n,
+                             prob = c(1 - p, p))
+  A <- matrix(nrow = n, ncol = n, data = D)
   diag(A) <- 0
   if (lower){
     A[upper.tri(A)] <- 0
   }
-  diag(A) <- -rowSums(A) - abs(rdiag(p))
+  diag(A) <- -rowSums(A) - abs(rdiag(n))
   return(A)
 }
 
