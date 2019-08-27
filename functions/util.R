@@ -60,7 +60,7 @@ mll <- function(P, S){
 #'
 #' @export
 mllB <- function(B, S, C = diag(nrow(B))){
-  P <- solve(lyapunov::clyap(A = B, Q = C))
+  P <- solve(clyap(B, C))
   mll(P, S)
 }
 
@@ -90,7 +90,7 @@ rOUinv <- function(n = 1, B,
                 D = diag(nrow = nrow(B), ncol = ncol(B)),
                 mean = rep(0, nrow(B)) ){
   C <- D %*% t(D)
-  Sigma <- clyap(A = B, C)
+  Sigma <- clyap(B, C)
   S <- MASS::mvrnorm(n = n, Sigma = Sigma, mu = mean)
   return(list(data = S, Sigma = Sigma, C = C, B = B, mean = mean))
 }

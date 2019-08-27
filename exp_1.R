@@ -6,7 +6,7 @@ source("functions/util.R")
 
 p <- 10
 N <- 10000
-d <-  0.4
+d <-  0.2
 lower <- TRUE
 M <- 50
 
@@ -24,17 +24,18 @@ res <- data.frame(t(replicate(M, {
   npar <- sum(B!=0)
   exper <- rOUinv(n = N, B = B, D = sqrt(C))
   Sigma <- cov(exper$data)
+  lambda <- seq(max(abs(Sigma))/20, max(abs(Sigma)) / 2, length = 10)[3]
   #B0 <- lowertriangB(Sigma, C = C)
-  #B0 <- -0.5 * C %*% solve(Sigma)
-  B0 <- B0(p)
+  B0 <- -0.5 * C %*% solve(Sigma)
+  #B0 <- B0(p)
   t1 <- system.time(
       Best <-
         proxgradllB(Sigma = Sigma,
-                    B = B0, eps = 1e-16, C = diag(p),
+                    B = B0, eps = 1e-10, C = diag(p),
                     alpha = 0.5,
                     maxIter = 2000,
                     lambda = lambda,
-                   job = 0)$B
+                   job = 1)$B
     )[3]
   
   mllBest <- mllB(Best, Sigma)
