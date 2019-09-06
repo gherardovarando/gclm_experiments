@@ -157,8 +157,13 @@ ROC <- function(x, y, n = 100){
 
 #'@rdname ROC
 #'@export
-AUROC <- function(x, y, n = 100){
- D <- ROC(x, y, n)
+AUROC <- function(x, y = NULL, n = 100){
+ if (!is.null(y)){
+   D <- ROC(x, y, n)   
+ }else{
+   D <- x
+   n <- nrow(D)
+ }
  temp <- 0
  for (i in 1:(n - 1)){
    ## trapezoidal quadrature rule
@@ -166,6 +171,8 @@ AUROC <- function(x, y, n = 100){
  }
  return(temp)
 }
+
+
 
 #'@rdname ROC
 #'@export

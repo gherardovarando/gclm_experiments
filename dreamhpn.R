@@ -11,7 +11,7 @@ trueGraph <-
 p <- 20
 diag(trueGraph) <- 1
 colnames(trueGraph) <- rownames(trueGraph) <- NULL
-
+B <- t(trueGraph)
 
 ###################### estimate gradph from all data
 S <- cor(D[, -(1:4)])
@@ -19,15 +19,14 @@ B0 <- - 0.5 * diag(p) %*% solve(S)
 C0 <- diag(p)
 
 Best <- proxgradllB(Sigma = S,B = B0, C = C0, eps = 1e-10, 
-                   alpha = 0.5, maxIter = 1000, lambda = 0.5, job = 0)$B
+                   alpha = 0.5, maxIter = 1000, lambda = 0.1, job = 1)$B
 
 deltaGraph(t(trueGraph), Best,
            edge.arrow.size = 0.3, layout = layout_in_circle)
 
-hamming(t(trueGraph), Best)
+hamming(B, Best)
 
-results <- llBpath(S, job = 11)
-B <- t(trueGraph)
+results <- llBpath(S, job = 11,eps = 1e-12)
 t(sapply(results, function(res) c(lambda = res$lambda, 
                                   npar = sum(res$B!=0),
                                   fp = sum(res$B!=0 & B==0),
@@ -40,7 +39,7 @@ t(sapply(results, function(res) c(lambda = res$lambda,
 S <- cor(D[, -(1:4)])
 Best <- - 0.5 * diag(p) %*% solve(S)
 C0 <- diag(p)
-lambda <- 0.05
+lambda <- 0.1
 N <- nrow(D)
 for (i in 1:100){
   S <- cor(D[sample(1:N, size = N, replace = TRUE), - (1:4)])
@@ -54,7 +53,7 @@ deltaGraph(t(trueGraph), Best,
            edge.arrow.size = 0.3, layout = layout_in_circle)
 hamming(Best, t(trueGraph))
 
-Bp <- sign(abs(Best))
+Bp <- (abs(Best))
 Bp[Bp == 0] <- 1e-9
 Bp[Bp > 1] <- 1
 AUROC(Bp , t(trueGraph))
@@ -73,20 +72,20 @@ ggplot(data=data.frame(roc1), aes(x= FPR, y= TPR)) +
 # clusterExport(cl, "D")
 # clusterExport(cl, "p")
 # clusterCall(cl, function() library(clggm) )
-res <- sapply(X = 1:100, FUN = function(x){
-  S <- cor(D[sample(1:nrow(D), replace = TRUE, size = nrow(D)  ), 
+res <- sapply(X = 1:200, FUN = function(x){
+  S <- cor(D[sample(1:nrow(D), replace = TRUE, size = nrow(D)), 
              -(1:4)])
   B0 <- - 0.5 * diag(p) %*% solve(S)
   C <- diag(p)
   Best <- proxgradllB(Sigma = S, C = C, B = B0,
-                        lambda = 0.03, 
-                        alpha = 0.5,eps = 1e-8, 
+                        lambda = 0.06, 
+                        alpha = 0.5,eps = 1e-12, 
                         maxIter = 1000, job = 1)$B
   print(x)
   return(Best)
 })
 
-AA <- apply(res, MARGIN = 1, FUN =  function(x) mean((abs(x))))
+AA <- apply(res, MARGIN = 1, FUN =  function(x) mean(sign(abs(x))))
 
 AA <- matrix(nrow = 20, ncol = 20, AA)
 
@@ -109,7 +108,7 @@ ggplot(data=data.frame(roc1), aes(x= FPR, y= TPR)) +
 
 p <- 20
 C <- diag(p)
-lambda <- 0.15
+lambda <- 0.05
 Btot <- matrix(nrow = p, ncol = p, 0)
 for (stimulus in levels(D$Stimulus)){
   for (inh in levels(D$Inhibitor)){
@@ -117,7 +116,7 @@ for (stimulus in levels(D$Stimulus)){
       S <- cor(D[D$Stimulus == stimulus & D$Inhibitor == inh, -(1:4)])
       Best <- proxgradllB(Sigma = S, C = C, B = B0,
                           lambda =  lambda, 
-                          alpha = 0.5,eps = 1e-8, 
+                          alpha = 0.5,eps = 1e-12, 
                           maxIter = 1000, job = 1)$B
       deltaGraph(t(trueGraph), Best,
                  edge.arrow.size = 0.3, layout = layout_with_fr)
@@ -144,11 +143,18 @@ ggplot(data=data.frame(roc2), aes(x= FPR, y= TPR)) +
 
 #######################################################################
 p <- 20
+iter <- 0
 Btot <- matrix(nrow = p, ncol = p, 0)
-  for (stimulus in levels(D$Stimulus)){
+for (stimulus in levels(D$Stimulus)){
   for (inh in levels(D$Inhibitor)){
     if (nrow(D[D$Stimulus == stimulus & D$Inhibitor == inh, -(1:4)]) > 1){
-      S <- cor(D[D$Stimulus == stimulus & D$Inhibitor == inh, -(1:4)])
+      tmp <- D[D$Stimulus == stimulus & D$Inhibitor == inh,]
+      #mtmp <- colMeans(tmp[tmp$Timepoint == "0min", - (1:4) ])
+      tmp <- tmp[, - (1:4)]
+      #for (i in ncol(tmp)){
+      #  tmp[,i] <- tmp[,i] - mtmp[i]
+      #}
+      S <- cov(tmp)
       MM <- matrix(nrow = p, ncol = p, 1:(p^2))
       TT  <- diag(p ^ 2)[c(t(MM)),]
       AA <- S %x% diag(p) + ( (diag(p) %x% S) %*% TT)
@@ -156,18 +162,18 @@ Btot <- matrix(nrow = p, ncol = p, 0)
                    glmnet(AA, y = - c(diag(p)),
                           lambda = 0.0008,
                           intercept = FALSE,
-                          standardize = TRUE)$beta[,1])
+                          standardize = FALSE)$beta[,1])
       deltaGraph(t(trueGraph), Best,
                  edge.arrow.size = 0.3, layout = layout_with_fr)
-      #Btot <- Btot + sign(abs(Best))
-      Btot <- Btot + abs(Best) / sum(diag(clyap(Best, c(diag(p)))))
+      iter <- iter + 1
+      Btot <- Btot + sign(abs(Best))
+      #Btot <- Btot + abs(Best) / sum(diag(clyap(Best, c(diag(p)))))
     }
-
   }
 }
 
 
-Btot2 <- (Btot)
+Btot2 <- (Btot) / 20
 Btot2[Btot2 <= 0] <- 1e-6
 Btot2[Btot2 > 1] <- 1
 ix <- lower.tri(Btot) | upper.tri(Btot)
