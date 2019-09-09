@@ -84,33 +84,23 @@ xx <- diag(Btrue) / diag(B4)
 plot(xx, diag(D)^2)
 abline(0,1)
 ########## path solutions
-system.time(results <- llBpath(Sigmahat, eps = 1e-12,
-                               maxIter = 1000, job = 10))
+system.time(results <- llBpath(Sigmahat, eps = 1e-15, 
+                               lambdas = seq(0,1,length.out = 100),
+                               maxIter = 5000, job =11))
+reslasso <- lassoB(Sigmahat, lambda = seq(0.03,0,length.out = 100))
 
-t(sapply(results, function(res) c(lambda = res$lambda, 
-                                hamming = hamming(res$B, Btrue),
-                                npar = sum(res$B!=0))))
 
-resultspath <- llBpath(cov2cor(Sigmahat), eps = 1e-12, 
-                       maxIter = 5000, job = 10, 
-                       lambdas = seq(0,2,length.out = 100))
 
-t(sapply(resultspath, function(res) c(lambda = res$lambda, 
-                                  hamming = hamming(res$B, Btrue),
-                                  npar = sum(res$B!=0))))
+evaluatePathB(results = results, Btrue) -> evllB
+evlasso <- evaluatePathB(results = reslasso, Btrue)
+AUROC(evlasso$roc)
+plot(evlasso$roc)
+evlasso$confusion
 
-roc <- t(sapply(resultspath, function(res){
-  ix <- lower.tri(Btrue) | upper.tri(Btrue)
-  c(FPR = FPR(res$B[ix], Btrue[ix]), TPR = TPR(res$B[ix], Btrue[ix]) )
-}))
-plot(roc, type = "l")
-AUROC(roc)
-ggplot(data=data.frame(roc), aes(x= FPR, y= TPR)) +
-  geom_path()+
-  geom_point() +
-  geom_abline(intercept = 0, slope = 1, col = "gray", linetype = "dashed") 
-  #+
-  #coord_fixed()
+AUROC(evllB$roc)
+plot(evllB$roc)
+evllB$confusion
+
 ################## Estimate C (B known)
 
 p <- 10
@@ -133,11 +123,11 @@ max(abs(out$C - Ctrue))
 
 #################### estimate B and C
 
-p <- 10
+p <- 20
 N <- 10000
 d <- 2 / p
 Btrue <- rStableMetzler(n = p, p = d, lower = TRUE, rfun = function(n) 
-  rnorm(n, sd = 10), 
+  rnorm(n, sd = 1), 
   rdiag = rnorm)
 Ctrue <- diag(1 + runif(p, min = -0.5, max = 1))
 #Ctrue <- diag(p:1)
@@ -148,23 +138,24 @@ Sigmahat <- cov(exper$data)
 
 C0 <- diag(p)
 B0 <- - 0.5 * C0 %*% solve(Sigmahat)
-deltaGraph(Btrue, Btrue)
+deltaGraph(Btrue, Btrue, edge.arrow.size = 0.3, layout = layout_with_fr)
 #B0 <- B0(p)
 #B0 <- sign(abs(Btrue))
 #diag(B0) <- -p
 #B0 <- lowertriangB(Sigmahat)
 out <- pnllbc(Sigma = Sigmahat, B = B0, C = C0, C0 = C0,
-              eps = 1e-12, alpha = 0.5, beta = 0.25, maxIter = 1000, 
-              intitr = 1000,
-              lambda = 0.2, lambdac = 0, job = 10)
+              eps = 1e-17, alpha = 0.5, beta = 0.25, maxIter = 1000, 
+              intitr = 1,
+              lambda = 0.15, lambdac = 0.0005, job = 11)
 Best <- proxgradllB(Sigmahat, out$B, C = out$C, 
-                    job = 10, eps = 1e-16, lambda = 0, maxIter = 1e5)$B
+                    job = 10, eps = 1e-16, lambda = 0, maxIter = 1e3)$B
 Cest <- graddsllc(Sigmahat, Best, out$C, eps = 1e-15, maxIter = 1000)$C
 hamming(Btrue, out$B)
 hamming(Btrue, Best)
 deltaGraph(Btrue, out$B, edge.arrow.size = 0.3, layout = layout_with_fr)
 deltaGraph(Btrue, Best, edge.arrow.size = 0.3, layout = layout_with_fr)
 diag(out$C)
+diag(Cest)
 diag(Ctrue)
 plot(diag(out$C), diag(Ctrue))
 x <- diag(out$C / sqrt(sum(out$C^2)))
@@ -179,4 +170,6 @@ mllB(Btrue, Sigmahat, Ctrue)
 plot(out$B[Btrue != 0], Btrue[Btrue != 0])
 abline(0,1,col= "red")
 
-
+sum(Btrue!=0)
+sum(Best!=0)
+Best[Btrue == 0 & Best != 0]

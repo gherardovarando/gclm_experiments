@@ -177,6 +177,9 @@ AUROC <- function(x, y = NULL, n = 100){
 #'@rdname ROC
 #'@export
 FPR <- function(x, y){
+  if (sum(y == 0) == 0){
+    return(1)
+  }
   (sum(x != 0 & y == 0)) / (sum(y == 0))
 }
 
@@ -184,6 +187,9 @@ FPR <- function(x, y){
 #'@rdname ROC
 #'@export
 TPR <- function(x, y){
+  if (sum(y != 0) == 0){
+    return(1)
+  }
    sum(x != 0 & y != 0) / sum(y !=0) 
 }
 
@@ -198,4 +204,41 @@ B0 <- function(p){
   M <- matrix(nrow = p, ncol = p, 1)
   diag(M) <- -p
   return(M)
+}
+
+
+evaluatePathB <- function(results, B){
+  ix <- lower.tri(B) | upper.tri(B)
+  conf <- t(sapply(results, function(res) c(lambda = res$lambda, 
+                                    npar = sum(res$B[ix]!=0),
+                                    fp = sum(res$B[ix]!=0 & B[ix] ==0),
+                                    tp = sum(res$B[ix]!=0 & B[ix] !=0) ,
+                                    fn = sum(res$B[ix] ==0 & B[ix] !=0),
+                                    tn = sum(res$B[ix] ==0 & B[ix] ==0),
+                                    errs = sum(res$B[ix] !=0 & B[ix] ==0) + 
+                                      sum(res$B[ix] ==0 & B[ix] !=0))))
+  roc <- t(sapply(results, function(res){
+    c(FPR = FPR(res$B[ix], B[ix]), TPR = TPR(res$B[ix], B[ix]) )
+  }))
+  return(list(roc = roc, confusion = conf))
+}
+
+
+library(glmnet)
+
+lassoB <- function(Sigma, lambda = NULL, C = diag(nrow(Sigma))){
+  p <- nrow(Sigma)
+  MM <- matrix(nrow = p, ncol = p, 1:(p^2))
+  TT  <- diag(p ^ 2)[c(t(MM)),]
+  AA <- Sigma %x% diag(p) + ( (diag(p) %x% Sigma) %*% TT)
+  tmp <- glmnet(AA, y = - c(C),
+                intercept = FALSE,
+                lambda = lambda,
+                lambda.min.ratio = 1e-10,
+                standardize = FALSE,
+                penalty.factor = c(1 - diag(p))  )
+  lapply(1:length(tmp$lambda), function(i){
+    list(B = matrix(nrow =p, ncol = p, data = tmp$beta[,i]), 
+         lambda = tmp$lambda[i])
+  })
 }

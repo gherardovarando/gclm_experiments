@@ -4,10 +4,10 @@ library(ggplot2)
 source("functions/util.R")
 
 
-p <- 20
+p <- 10
 rep <- 100
 
-for (k in c(1,2,3,4)){
+for (k in c(2)){
   d <- k / p
   for (N in c(50, 100, 200, 300, 400, 500, 1000)){
     dir.create("simulated_OU", showWarnings = FALSE)

@@ -186,3 +186,16 @@ ggplot(data=data.frame(roc2), aes(x= FPR, y= TPR)) +
   geom_abline(intercept = 0, slope = 1, col = "gray", linetype = "dashed") +
   coord_fixed()
 
+################### lambda path
+
+S <- cor(D[, -(1:4)])
+results <- llBpath(S, eps = 1e-12, 
+                   maxIter = 5000, job = 10, 
+                   lambdas = seq(0,2,length.out = 100))
+roc <- t(sapply(results, function(res){
+  ix <- lower.tri(B) | upper.tri(B)
+  c(FPR = FPR(res$B[ix], B[ix]), TPR = TPR(res$B[ix], B[ix]) )
+}))
+auroc <- abs(AUROC(roc))
+auroc
+plot(roc)
