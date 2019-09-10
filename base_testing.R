@@ -1,3 +1,5 @@
+############ will remove it
+
 library(clggm)
 library(igraph)
 library(ggplot2)
@@ -19,87 +21,34 @@ Ctrue <- diag(p)
 
 exper <- rOUinv(N, Btrue, D = sqrt(Ctrue))
 
-Sigmahat <- cov(exper$data)
+Sigmahat <- cor(exper$data)
 
 
-#######################################################################
-lambda <- 0.06
-C <- diag(p)
-B0 <- - 0.5 * C %*% solve(Sigmahat)
-#B0[abs(Sigmahat) < lambda^2] <- 0
-
-### proximal gradient for -ll(B) + ||B||_1,off
-### Best1 and Best2 should be the same 
-### Best1 is with the R implementation (gradient is computed in FORTRAN)
-### Best2 is with pure fortran 
-###  job = 0  ==  r = FALSE, h = FALSE
-###  job = 10 == r = FALSE, h = TRUE
-###  job = 11 == r = TRUE, h = TRUE
-
-system.time(Best <- proxgradllB(Sigmahat, B = B0, C = C,
-                              eps = 1e-12,
-                              alpha = 0.5,
-                              maxIter = 1000, lambda = lambda,
-                               job = 0)$B)
-
-### proximal gradient for 0.5 * ||Sigma - S(B)||_2^2 + lambda * ||B||_1,off
-system.time(Best2 <- proxgradlsB(Sigmahat, B = B0, C = C,
-                                eps = 1e-12,
-                                alpha = 0.5,
-                                maxIter = 1000, lambda = lambda,
-                                 job = 10)$B)
-
-### coordinate descent for -ll(B) + ||B||_1,off
-system.time(Best3 <- proxcdllB(Sigmahat, B = B0, C = C,
-                                 eps = 1e-16,
-                                 alpha = 0.5,
-                                 maxIter = 1000, lambda = lambda,
-                                  job = 0)$B)
-
-hamming(Best, Btrue)
-hamming(Best2, Btrue)
-hamming(Best3, Btrue)
-deltaGraph(Btrue, Best, edge.arrow.size = 0.3, layout = layout_with_fr)
-deltaGraph(Btrue, Best2, edge.arrow.size = 0.3, layout = layout_with_fr)
-deltaGraph(Btrue, Best3, edge.arrow.size = 0.3, layout = layout_with_fr)
-
-mllB(Best, Sigmahat, C = Ctrue)
-mllB(Btrue, Sigmahat, C = Ctrue)
-
-### refine with maximum likelihood
-BestI <- proxgradllB(Sigmahat, Best, eps = 1e-16, job = 10)$B
-### correct structure
-Bs <- sign(abs(Btrue))
-diag(Bs) <- -p
-BestII <- proxgradllB(Sigmahat, Bs, job = 10, eps = 1e-16)$B
-BestI
-BestII
-D <- diag(runif(p))
-BestIII <- proxgradllB(D %*% Sigmahat %*% D, Bs,C = D %*% D, 
-                       job = 10, eps = 1e-16)$B
-B4 <- proxgradllB(D %*% Sigmahat %*% D, Bs,C = diag(p), 
-                  job = 10, eps = 1e-16, maxIter = 20000)$B
-
-xx <- diag(Btrue) / diag(B4)
-plot(xx, diag(D)^2)
-abline(0,1)
 ########## path solutions
-system.time(results <- llBpath(Sigmahat, eps = 1e-15, 
-                               lambdas = seq(0,1,length.out = 100),
-                               maxIter = 5000, job =11))
-reslasso <- lassoB(Sigmahat, lambda = seq(0.03,0,length.out = 100))
+resllb <- llBpath(Sigmahat, eps = 1e-15, 
+                               lambdas = seq(0,max(diag(Sigmahat)),
+                                             length.out = 100),
+                               maxIter = 5000, job =11)
 
+reslsb <- lsBpath(Sigmahat, eps = 1e-15, 
+                  lambdas = seq(0,max(diag(Sigmahat)),length.out = 100),
+                  maxIter = 5000, job =11)
 
+reslasso <- lassoB(Sigmahat, C = diag(p))
 
-evaluatePathB(results = results, Btrue) -> evllB
+evllb <- evaluatePathB(results = resllb, Btrue) 
+evlsb <- evaluatePathB(results = reslsb, Btrue) 
 evlasso <- evaluatePathB(results = reslasso, Btrue)
-AUROC(evlasso$roc)
-plot(evlasso$roc)
-evlasso$confusion
 
-AUROC(evllB$roc)
-plot(evllB$roc)
-evllB$confusion
+AUROC(evllb$roc)
+AUROC(evlsb$roc)
+AUROC(evlasso$roc)
+
+plotROC(evllb$roc)
+plotROC(evlsb$roc)
+plotROC(evlasso$roc)
+
+plotROCS(list(logLik_l1 = evllb, ls_l1 = evlsb, LASSO = evlasso))
 
 ################## Estimate C (B known)
 

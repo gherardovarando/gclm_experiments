@@ -209,36 +209,69 @@ B0 <- function(p){
 
 evaluatePathB <- function(results, B){
   ix <- lower.tri(B) | upper.tri(B)
-  conf <- t(sapply(results, function(res) c(lambda = res$lambda, 
+  conf <- as.data.frame(t(sapply(results, function(res) c(lambda = res$lambda, 
                                     npar = sum(res$B[ix]!=0),
-                                    fp = sum(res$B[ix]!=0 & B[ix] ==0),
-                                    tp = sum(res$B[ix]!=0 & B[ix] !=0) ,
+                                    fp = sum(res$B[ix] !=0 & B[ix] ==0),
+                                    tp = sum(res$B[ix] !=0 & B[ix] !=0) ,
                                     fn = sum(res$B[ix] ==0 & B[ix] !=0),
                                     tn = sum(res$B[ix] ==0 & B[ix] ==0),
                                     errs = sum(res$B[ix] !=0 & B[ix] ==0) + 
-                                      sum(res$B[ix] ==0 & B[ix] !=0))))
+                                      sum(res$B[ix] ==0 & B[ix] !=0)))))
   roc <- t(sapply(results, function(res){
     c(FPR = FPR(res$B[ix], B[ix]), TPR = TPR(res$B[ix], B[ix]) )
   }))
+  roc <- roc[dim(roc)[1]:1,]
+  roc <- rbind(c(0,0), roc, c(1,1))
   return(list(roc = roc, confusion = conf))
 }
 
 
+library(lars)
 library(glmnet)
-
-lassoB <- function(Sigma, lambda = NULL, C = diag(nrow(Sigma))){
+lassoB <- function(Sigma, C = diag(nrow(Sigma)), lambda = NULL){
   p <- nrow(Sigma)
   MM <- matrix(nrow = p, ncol = p, 1:(p^2))
   TT  <- diag(p ^ 2)[c(t(MM)),]
   AA <- Sigma %x% diag(p) + ( (diag(p) %x% Sigma) %*% TT)
-  tmp <- glmnet(AA, y = - c(C),
+#  tmp <- lars(AA, y = - c(C),
+#               type = "stepwise",
+#                intercept = FALSE,
+#                normalize = FALSE )
+  tmp <- glmnet(AA, y = -c(C),
                 intercept = FALSE,
-                lambda = lambda,
-                lambda.min.ratio = 1e-10,
                 standardize = FALSE,
-                penalty.factor = c(1 - diag(p))  )
-  lapply(1:length(tmp$lambda), function(i){
+                nlambda = 100,
+                lambda = lambda,
+                penalty.factor = 1 - diag(p) )
+### ATTENTION if use glmnet change to tmp$beta[,i]:
+### if use lars change to tmp$beta[i,]
+    lapply(length(tmp$lambda):1, function(i){
     list(B = matrix(nrow =p, ncol = p, data = tmp$beta[,i]), 
          lambda = tmp$lambda[i])
   })
+}
+
+
+library(ggplot2)
+
+plotROC <- function(roc){
+  ggplot(data=as.data.frame(roc), aes(x= FPR, y= TPR)) +
+    geom_path()+
+    geom_abline(intercept = 0, slope = 1, col = "gray", linetype = "dashed") + 
+    coord_fixed()
+}
+
+plotROCS <- function(x){
+  nms <- names(x)
+  df <- as.data.frame(x[[1]]$roc)
+  df$algorithm <- nms[1]
+  for (j in 2:length(x)){
+    dtmp <- as.data.frame(x[[j]]$roc)
+    dtmp$algorithm <- nms[j]
+    df <- rbind(df, dtmp)
+  }
+  ggplot(data=df, aes(x= FPR, y= TPR, group = algorithm, color = algorithm)) +
+    geom_path()+
+    geom_abline(intercept = 0, slope = 1, col = "gray", linetype = "dashed") + 
+    coord_fixed()
 }

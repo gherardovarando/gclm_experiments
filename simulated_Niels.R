@@ -30,7 +30,7 @@ ev <- evaluatePathB(res, B)
 plot(ev$roc)
 AUROC(ev$roc)
 ev$confusion
-
+Best <- res[[16]]$B
 Best <- proxgradllB(Sigma = Sigma, B = Best, eps = 1e-15,
                    alpha = 0.5, maxIter = 1000,
                    lambda = 0,  job = 10)$B
