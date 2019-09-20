@@ -6,52 +6,73 @@ source("functions/util.R")
 N <- 100000
 p <- 10
 B <- matrix(nrow = p, ncol = p, 0 )
-diag(B) <-  - ((p+1):(2)) / 5
+diag(B) <-  - 3
 
 for (i in 2:p){
   B[i-1, i] <- 1
 }
 B[i, 1] <- 1
 
-C <- diag(runif(p))
 C <- diag(p)
-exper <- rOUinv(N, B, D = sqrt(C))
+exper <- rOUinv(N, B, C = C)
 
 Sigmahat <- cor(exper$data)
 
-results <- llBpath(Sigmahat, eps = 1e-15, C = C,
+resllb <- llBpath(Sigmahat, eps = 1e-6, B0 = B0(p),
                    maxIter = 5000, job = 11, 
                    lambdas = seq(0,3,length.out = 100))
-roc <- t(sapply(results, function(res){
-  ix <- lower.tri(B) | upper.tri(B)
-  c(FPR = FPR(res$B[ix], B[ix]), TPR = TPR(res$B[ix], B[ix]) )
-}))
-auroc <- abs(AUROC(roc))
-plot(roc)
 
-ggplot(data=as.data.frame(roc), aes(x= FPR, y= TPR)) +
-  geom_path()+
-  geom_abline(intercept = 0, slope = 1, col = "gray", linetype = "dashed") + 
-  coord_fixed() + 
-  ggtitle(paste("ROC"), subtitle = paste0("p=", p, ", N=", N))+
-  ggsave(paste0("plot/", "cycle_N", N, "p", p, "roc_envelope.pdf"))
+reslsb <- lsBpath(Sigmahat, eps = 1e-6, 
+                              lambdas = seq(0,0.5,length.out = 100),
+                              maxIter = 5000, job = 11)
 
-t(sapply(results, function(res){
-  return(c(lambda = res$lambda, hamming = hamming(B, res$B)))
-}))
+reslasso <- lassoB(Sigmahat, C = diag(p))
 
-Sigmahat <- exper$Sigma
-B0 <- -0.5 * solve(Sigmahat)
-Best <- proxgradllB(Sigmahat, B0, C =  C, eps = 1e-12, maxIter = 5000, 
-                    lambda = 0.5, job = 1)$B
-deltaGraph(B, Best, layout = layout_in_circle, edge.arrow.size = 0.3)
+resglasso <- glassoB(Sigmahat)
 
+evllb <- evaluatePathB(results = resllb, B) 
+evlsb <- evaluatePathB(results = reslsb, B) 
+evlasso <- evaluatePathB(results = reslasso, B)
+evglasso <- evaluatePathB(results = resglasso, B)
 
-res <- pnllbc(Sigmahat, B0, eps = 1e-15, maxIter = 1000, intitr = 10, 
-       lambda = 0.025, lambdac = 0.0005, job = 1)
+AUROC(evllb$roc)
+AUROC(evlsb$roc)
+AUROC(evlasso$roc)
+AUROC(evglasso$roc)
 
-deltaGraph(B, res$B, layout = layout_in_circle, edge.arrow.size = 0.3)
-diag(res$C)
-diag(C)
-plot(diag(C), diag(res$C))
-abline(0,1)
+plotROC(evllb$roc)
+plotROC(evlsb$roc)
+plotROC(evlasso$roc)
+
+plotROCS(list(logLik_l1 = evllb, 
+              ls_l1 = evlsb, 
+              LASSO = evlasso,
+              GLASSO = evglasso))
+
+plotPR(evllb$confusion)
+plotPR(evlsb$confusion)
+plotPR(evlasso$confusion)
+plotPR(evglasso$confusion)
+
+max(evllb$confusion$f1)
+max(evlsb$confusion$f1)
+max(evlasso$confusion$f1)
+max(evglasso$confusion$f1)
+
+max(evllb$confusion$bacc)
+max(evlsb$confusion$bacc)
+max(evlasso$confusion$bacc)
+max(evglasso$confusion$bacc)
+
+min(evllb$confusion$errs)
+min(evlsb$confusion$errs)
+min(evlasso$confusion$errs)
+min(evglasso$confusion$errs)
+
+Best <- proxgradllB(Sigma = Sigmahat, 
+                    B = B, lambda = 0,
+                    job =10, eps = 1e-16, maxIter = 15000)$B
+deltaGraph( B, Best, edge.arrow.size = 0.2, layout = layout_with_fr)
+mllB(Best, S = Sigmahat)
+mll(solve(Sigmahat), Sigmahat)
+

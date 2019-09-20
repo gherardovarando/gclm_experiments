@@ -1,61 +1,80 @@
 library(ggplot2)
 source("functions/util.R")
 
-p <- 10
-k <- 2
-rep <- 100
-Ns <- c(50, 100, 200, 300, 400, 500, 1000)
-dir.create("plot", showWarnings = FALSE)
-dir.create("plot/simulated_ou", showWarnings = FALSE)
+rep <- 20
+Ns <- as.character(c(50, 100, 200, 300, 400, 500,
+                     600, 700, 800, 900, 
+                     1000))
+ks <- c(1)
+n <- length(Ns)
+p <- 20
+algs <- c("loglik", "frobenius", "lasso", "glasso")
+restable <- array(dim = c(5, length(algs), length(ks), length(Ns), rep), 
+                  dimnames = list(stats = c("AUROC", "MINERR", "MAXF1", 
+                                            "MAXBACC", "ELAPSED"),
+                                  algorithm = algs,
+                                  k = ks,
+                                  N = Ns, 
+                                  rep = 1:rep), data = NA)
 
-plotpath <- "plot/simulated_ou/"
-restable <- data.frame(N = Ns)
-for (i in 1:nrow(restable)){
-  N <- restable[i, "N"]
-  path <- paste0("p",p,"/k",k,"/N", N, "/")
-  filepath <- paste0("simulated_OU/identityC/", path )
-  dir.create(paste0(plotpath, path),showWarnings =  FALSE, recursive = TRUE)
-  exps <- as.data.frame(t(sapply(1:rep, function(ii){
-    name <- paste0("rep", ii, ".RData")
-    load(paste0(filepath, name))
-    evals <- lapply(results, evaluatePathB, B = exper$B)
-    AUROCS <- abs(sapply(evals, function(x) AUROC(x$roc)))
-    names(AUROCS) <- paste0("AUROC.", names(evals)) 
-    MINERR <- sapply(evals, function(x) min(x$confusion$err))
-    names(MINERR) <- paste0("MINERR.", names(evals)) 
-    NPAR <- c(NPAR = sum(exper$B != 0) - p)
-    return(c(AUROCS, MINERR, NPAR))
-    ### check ROC
-    })))
-  
-    restable$AUROC.loglikL1B[i] <- mean(exps$AUROC.loglikL1B)
-    restable$AUROC.lsL1B[i] <- mean(exps$AUROC.lsL1B)
-    restable$AUROC.lasso[i] <- mean(exps$AUROC.lasso)
-    restable$MINERR.loglikL1B[i] <- mean(exps$MINERR.loglikL1B / exps$NPAR)
-    restable$MINERR.lsL1B[i] <- mean(exps$MINERR.lsL1B / exps$NPAR)
-    restable$MINERR.lasso[i] <- mean(exps$MINERR.lasso / exps$NPAR)
+plotpath <- paste0("plot/simulated_ou/randomC/", "p",p,"/")
+dir.create(plotpath, showWarnings = FALSE, recursive = TRUE)
+for (k in ks){
+  for (i in 1:rep){
+    filepath <- paste0("simulated_OU/randomC/", "p",p,"/k",k,"/"
+                       , "rep", i, ".RData" )
+    load(filepath)
+    for (N in Ns){
+      npar <- sum(exper$B !=0 ) - p
+      evals <- lapply(results[[paste0(N)]], evaluatePathB, B = exper$B)
+      restable["AUROC" ,algs,k,N,i] <- sapply(evals, function(x) 
+                                                        AUROC(x$roc))
+      restable["MAXACC",algs,k,N,i] <- sapply(evals, function(x) 
+                                                   (1 - min(x$confusion$err) / npar))
+      restable["MAXF1",algs,k,N,i] <- sapply(evals, function(x) 
+                                                    max(x$confusion$f1) )
+      restable["MAXBACC",algs,k,N,i] <- sapply(evals, function(x) 
+        max(x$confusion$bacc) )
+      
+      restable["ELAPSED", algs, k, N, i] <- sapply(times, function(x) x[3])
+    }
+  }
 }
 
-df <- data.frame(AUROC = c(restable$AUROC.loglikL1B, 
-                           restable$AUROC.lsL1B,
-                           restable$AUROC.lasso), 
-                 algorithm = c(rep("loglikL1B", 7),
-                               rep("lsL1B", 7),
-                               rep("lasso", 7)),
-                 N = rep(Ns, 3))
 
-ggplot(df, aes(x = N, y = AUROC, group = algorithm, color = algorithm)) + 
-  geom_path()
+avgrestable <- apply(restable, MARGIN = 1:4, mean)
 
+df <- expand.grid(dimnames(avgrestable)[-1])
+df <- cbind(df,t(apply(df, 1, function(x){
+  avgrestable[,x[1], x[2], x[3]]
+})))
+df$d <- as.numeric(df$k) / p
+df$N <- as.numeric(Ns)[as.numeric(df$N)]
 
 
-df <- data.frame(MINERR = c(restable$MINERR.loglikL1B, 
-                           restable$MINERR.lsL1B,
-                           restable$MINERR.lasso), 
-                 algorithm = c(rep("loglikL1B", 7),
-                               rep("lsL1B", 7),
-                               rep("lasso", 7)),
-                 N = rep(Ns, 3))
+ggplot(df, aes(x = N, y = AUROC, group = paste0(algorithm,k), color = algorithm, 
+               linetype = k )) + 
+  geom_path() + 
+  ggsave("AUROC.pdf", path = plotpath,
+         width = 10, height = 10, units = "cm")
 
-ggplot(df, aes(x = N, y = MINERR, group = algorithm, color = algorithm)) + 
-  geom_path()
+
+ggplot(df, aes(x = N, y = MAXACC, group = paste0(algorithm,k), color = algorithm, 
+               linetype = k )) + 
+  geom_path() + ggsave("MAXACC.pdf", path = plotpath,
+                       width = 10, height = 10, units = "cm")
+
+ggplot(df, aes(x = N, y = MAXF1, group = paste0(algorithm,k), color = algorithm, 
+               linetype = k )) + 
+  geom_path() + ggsave("MAXF1.pdf", path = plotpath,
+                       width = 10, height = 10, units = "cm")
+
+ggplot(df, aes(x = N, y = MAXBACC, group = paste0(algorithm,k), color = algorithm, 
+               linetype = k )) + 
+  geom_path() + ggsave("MAXBACC.pdf", path = plotpath,
+                       width = 10, height = 10, units = "cm")
+
+
+
+
+

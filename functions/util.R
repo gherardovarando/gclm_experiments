@@ -87,9 +87,8 @@ mllB <- function(B, S, C = diag(nrow(B))){
 #'
 #' @export
 rOUinv <- function(n = 1, B,
-                D = diag(nrow = nrow(B), ncol = ncol(B)),
+                C = diag(nrow = nrow(B), ncol = ncol(B)),
                 mean = rep(0, nrow(B)) ){
-  C <- D %*% t(D)
   Sigma <- clyap(B, C)
   S <- MASS::mvrnorm(n = n, Sigma = Sigma, mu = mean)
   return(list(data = S, Sigma = Sigma, C = C, B = B, mean = mean))
@@ -216,7 +215,16 @@ evaluatePathB <- function(results, B){
                                     fn = sum(res$B[ix] ==0 & B[ix] !=0),
                                     tn = sum(res$B[ix] ==0 & B[ix] ==0),
                                     errs = sum(res$B[ix] !=0 & B[ix] ==0) + 
-                                      sum(res$B[ix] ==0 & B[ix] !=0)))))
+                                      sum(res$B[ix] == 0 & B[ix] !=0)))))
+  conf$tpr <- conf$tp / (conf$tp + conf$fn)
+  conf$tnr <- conf$tn / (conf$tn + conf$fp)
+  conf$bacc <- (conf$tpr + conf$tnr) / 2
+  conf$precision <- conf$tp / (conf$tp + conf$fp)
+  conf$precision[is.nan(conf$precision)] <- 1
+  conf$recall <- conf$tp / (conf$tp + conf$fn)
+  conf$recall[is.nan(conf$recall)] <- 1
+  conf$f1 <- 2 * (conf$precision * conf$recall) / (conf$precision + conf$recall)
+  conf$f1[is.nan(conf$f1)] <- 0
   roc <- t(sapply(results, function(res){
     c(FPR = FPR(res$B[ix], B[ix]), TPR = TPR(res$B[ix], B[ix]) )
   }))
@@ -234,21 +242,45 @@ lassoB <- function(Sigma, C = diag(nrow(Sigma)), lambda = NULL){
   TT  <- diag(p ^ 2)[c(t(MM)),]
   AA <- Sigma %x% diag(p) + ( (diag(p) %x% Sigma) %*% TT)
 #  tmp <- lars(AA, y = - c(C),
-#               type = "stepwise",
+#               type = "lasso",
 #                intercept = FALSE,
 #                normalize = FALSE )
+  if (is.null(lambda)){
+    tmp <- glmnet(AA, y = -c(C),
+                  intercept = FALSE,
+                  standardize = FALSE,
+                  nlambda = 3,
+                  penalty.factor = 1 - diag(p))
+    lambdamax <- max(tmp$lambda)
+    lambda <- seq(lambdamax, 0, length.out =  100)
+  }
+
   tmp <- glmnet(AA, y = -c(C),
                 intercept = FALSE,
                 standardize = FALSE,
                 nlambda = 100,
                 lambda = lambda,
-                penalty.factor = 1 - diag(p) )
+                lambda.min.ratio = 1e-8,
+                penalty.factor = 1 - diag(p),
+                maxit = 1e+8)
 ### ATTENTION if use glmnet change to tmp$beta[,i]:
 ### if use lars change to tmp$beta[i,]
-    lapply(length(tmp$lambda):1, function(i){
+    obj <- lapply(length(tmp$lambda):1, function(i){
     list(B = matrix(nrow =p, ncol = p, data = tmp$beta[,i]), 
          lambda = tmp$lambda[i])
   })
+    attr(obj, "jerr") <- tmp$jerr
+    attr(obj, "nulldev") <- tmp$nulldev
+    return(obj)
+}
+
+
+library(glasso)
+glassoB <- function(Sigma, lambda = NULL){
+  gpath <- glassopath(Sigma, rholist = lambda, trace = FALSE)
+  return(lapply(1:length(gpath$rholist), FUN = function(i){
+    list(B = gpath$wi[,,i], lambda = gpath$rholist[i])
+  }))
 }
 
 
@@ -261,7 +293,15 @@ plotROC <- function(roc){
     coord_fixed()
 }
 
-plotROCS <- function(x){
+
+plotPR <- function(x){
+  ggplot(data=x, aes(y= precision, x= recall)) +
+    geom_path()+
+    geom_abline(intercept = 1, slope = -1, col = "gray", linetype = "dashed") + 
+    coord_fixed()
+}
+
+plotROCS <- function(x, title = NULL){
   nms <- names(x)
   df <- as.data.frame(x[[1]]$roc)
   df$algorithm <- nms[1]
@@ -273,5 +313,61 @@ plotROCS <- function(x){
   ggplot(data=df, aes(x= FPR, y= TPR, group = algorithm, color = algorithm)) +
     geom_path()+
     geom_abline(intercept = 0, slope = 1, col = "gray", linetype = "dashed") + 
-    coord_fixed()
+    coord_fixed() + ggtitle(title) 
+}
+
+
+igraph.to.tikz <- function (graph, layout) {
+  ## Here we get the matrix layout
+  if (class(layout) == "function")
+    layout <- layout(graph)
+  
+  layout <- layout / max(abs(layout))
+  
+  ##TikZ initialisation and default options (see pgf/TikZ manual)
+  cat("\\tikzset{\n")
+  cat("\tnode/.style={circle,inner sep=1mm,minimum size=0.8cm,draw,very thick,black,fill=red!20,text=black},\n")
+  cat("\tnondirectional/.style={very thick,black},\n")
+  cat("\tunidirectional/.style={nondirectional,shorten >=2pt,-stealth},\n")
+  cat("\tbidirectional/.style={unidirectional,bend right=10}\n")
+  cat("}\n")
+  cat("\n")
+  
+  ##Size
+  cat("\\begin{tikzpicture}[scale=5]\n")
+  
+  for (i in 1:length(V(graph))) {
+    vertex <- V(graph)[i]
+    label <- V(graph)[vertex]$name
+    if (is.null(label))
+      label <- ""
+    
+    ##drawing vertices
+    cat (sprintf ("\t\\node [node] (v%d) at (%f, %f)\t{%s};\n", vertex, layout[i,1], layout[i,2], label))
+  }
+  cat("\n")
+  
+  adj = get.adjacency(graph)
+  bidirectional = adj & t(adj)
+  
+  if (!is.directed(graph)) ##undirected case
+    for (line in 1:nrow(adj)) {
+      for (col in line:ncol(adj)) {
+        if (adj[line,col]&col>line) {
+          cat (sprintf ("\t\\path [nondirectional] (v%d) edge (v%d);\n", line, col)) ##edges drawing
+        }
+      }
+    }
+  else ##directed case
+    for (line in 1:nrow(adj)) {
+      for (col in 1:ncol(adj)) {
+        if (bidirectional[line,col]&line > col)
+          cat (sprintf ("\t\\path [bidirectional] (v%d) edge (v%d);\n", line, col),
+               sprintf ("\t\\path [bidirectional] (v%d) edge (v%d);\n", col, line)) ##edges drawing
+        else if (!bidirectional[line,col]&adj[line,col]) 
+          cat (sprintf ("\t\\path [unidirectional] (v%d) edge (v%d);\n", line, col)) ##edges drawing
+      }
+    }
+  
+  cat("\\end{tikzpicture}\n")
 }
