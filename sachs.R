@@ -1,7 +1,8 @@
 library(clggm)
-require(igraph)
 source("functions/util.R")
 
+dir.create("resultsSachs/graphs", 
+           showWarnings = FALSE, recursive = TRUE)
 filenames <- c(
   "cd3cd28",
   "cd3cd28icam2",
@@ -31,7 +32,7 @@ datalist <- lapply(
 p <- ncol(datalist[[1]])
 
 ## set seed 
-set.seed(1)
+#set.seed(1)
 ########################## ESTIMATE GRAPH
 results <- lapply(1:length(datalist), function(i) {
   D <- datalist[[i]]
@@ -42,19 +43,19 @@ results <- lapply(1:length(datalist), function(i) {
     SigmaTest <-  cor(D[idxTest, ])
     ### estimate path 
     resultspath <- llBpath(SigmaTrain,
-                           lambdas = seq(0, 3, length.out = 100),
+                           lambdas = 2*exp((1-(50:1))/5) ,
                            eps = 1e-6, job = 11, maxIter = 5000)
     ### fit MLE to all path
-    resultspath <- lapply(resultspath, function(res) {
-      proxgradllB(
-        SigmaTrain,
-        B = res$B,
-        C = res$C,
-        lambda = 0,
-        eps = 1e-10,
-        job = 10
-      )
-    })
+    #resultspath <- lapply(resultspath, function(res) {
+    #  proxgradllB(
+    #    SigmaTrain,
+    #    B = res$B,
+    #    C = res$C,
+    #    lambda = 0,
+    #    eps = 1e-10,
+    #    job = 10
+    #  )
+    #})
     ### compute minus loglik
     tmp <- sapply(resultspath, function(res) {
       mll(solve(res$Sigma), SigmaTest)
@@ -69,11 +70,11 @@ averages <- lapply(results, function(res){
   matrix(nrow = p, ncol = p, data = apply(res, MARGIN = c(1,2), FUN = mean))
 })
 B <- matrix(nrow = p, ncol = p, 
-            data = rowMeans(sapply(averages, function(x) x > 0.2 )))
+            data = rowMeans(sapply(averages, function(x) x > 0.8 )))
 
 #### saving results
 
-save(file = "sachsresults.RData", list = c("B", "results", "averages"))
+save(file = "resultsSachs/sachsresults.RData", list = c("B", "results", "averages"))
 
 ############################### plotting and saving
 order <- c(
@@ -99,24 +100,9 @@ for (thr in thrs){
        layout = layout_in_circle(estgraph, order = order))
   
   #### saving graph to tkiz format
-  message("saving graph to sachsGraph_thr**.txt")
+  message("saving graph to graphs folder")
   igraph.to.tikz(estgraph, layout_in_circle(estgraph, order = order), 
-                 file = paste0("sachsGraph_thr",thr,  ".txt"))
+                 file = paste0("resultsSachs/graphs/sachsGraph_thr",thr,  ".txt"))
   
 }
 
-
-dataall <- datalist[[1]]
-for (i in 2:length(datalist)){
-  dataall <- rbind(dataall, datalist[[i]])
-}
-stab <- llBstabilitypath(dataall, job = 11, eps = 1e-6,
-                         lambdas = seq(0,2,length.out = 100))
-
-plot.new()
-plot.window(xlim = c(0,100), ylim = c(0,1))
-for (i in 1:p){
-  for (j in 1:p){
-    lines(stab[i,j, 100: 1], col = "black")         
-  }
-}

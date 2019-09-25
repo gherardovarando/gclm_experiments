@@ -22,11 +22,11 @@ for (typeC in c("randomC")){
                                       N = Ns, 
                                       rep = 1:rep), data = NA)
     
-    plotpath <- paste0("plot/simulated_ou/", typeC, "/", typeB, "/p",p,"/")
+    plotpath <- paste0("plot/simulations/", typeC, "/", typeB, "/p",p,"/")
     dir.create(plotpath, showWarnings = FALSE, recursive = TRUE)
     for (k in ks){
       for (i in 1:rep){
-        filepath <- paste0("simulated_OU/", typeC, "/", typeB, "/p",p,"/k",k,"/"
+        filepath <- paste0("simulations/", typeC, "/", typeB, "/p",p,"/k",k,"/"
                            , "rep", i, ".RData" )
         load(filepath)
         for (N in Ns){

@@ -248,9 +248,10 @@ evaluatePathB <- function(results, B){
 }
 
 
-library(lars)
+#library(lars)
 library(glmnet)
-lassoB <- function(Sigma, C = diag(nrow(Sigma)), lambda = NULL){
+lassoB <- function(Sigma, C = diag(nrow(Sigma)), 
+                   lambda = NULL, nlambda = 100){
   p <- nrow(Sigma)
   MM <- matrix(nrow = p, ncol = p, 1:(p^2))
   TT  <- diag(p ^ 2)[c(t(MM)),]
@@ -266,13 +267,14 @@ lassoB <- function(Sigma, C = diag(nrow(Sigma)), lambda = NULL){
                   nlambda = 3,
                   penalty.factor = 1 - diag(p))
     lambdamax <- max(tmp$lambda) * 1.1
-    lambda <- seq(lambdamax, 0, length.out =  1000)
+    lambda <- seq(lambdamax, 0, length.out =  nlambda)
   }
  
   tmp <- glmnet(AA, y = -c(C),
                 intercept = FALSE,
                 standardize = FALSE,
                 lambda = lambda,
+                nlambda = nlambda,
                 penalty.factor = 1 - diag(p))
 ### ATTENTION if use glmnet change to tmp$beta[,i]:
 ### if use lars change to tmp$beta[i,]

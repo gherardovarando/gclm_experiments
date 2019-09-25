@@ -6,13 +6,13 @@ source("functions/util.R")
 
 p <- 10
 rep <- 100
+nlambda <- 100
 for (randomC in c(TRUE, FALSE)){
     for (lower in c(FALSE, TRUE)){
-      
       typeC <- ifelse(randomC, "randomC", "identityC")
       typeB <- ifelse(lower, "lowertriangular", "general")
       for (k in c(1, 2, 3, 4)){
-        path <- paste0("simulated_OU/", typeC, "/", typeB, "/p", p, "/k", k, "/")
+        path <- paste0("simulations/", typeC, "/", typeB, "/p", p, "/k", k, "/")
         dir.create(path, showWarnings = FALSE, recursive = TRUE)
         d <- k / p
         for (r in 1:rep){
@@ -37,14 +37,14 @@ for (randomC in c(TRUE, FALSE)){
             Sigmahat <- cov2cor(Sigmahat)
             tllb <- system.time(resllb <- llBpath(Sigmahat, eps = 1e-6, C = C0, 
                                                   maxIter = 5000, job = 11, 
-                                                  lambdas = seq(0,3,length.out = 1000)))
+                                                  lambdas = seq(0,3,length.out = nlambda)))
             tlsb <- system.time(reslsb <- lsBpath(Sigmahat, eps = 1e-6, C = C0,
-                                                  lambdas = seq(0,3,length.out = 1000),
-                                                  maxIter = 5000, job =11))
-            tlasso <- system.time(reslasso <- lassoB(Sigmahat, C = C0))
+                                                  lambdas = seq(0,3,length.out = nlambda),
+                                                  maxIter = 5000, job = 11))
+            tlasso <- system.time(reslasso <- lassoB(Sigmahat, C = C0, nlambda = nlambda))
             tglasso <- system.time(resglasso <- glassoB(Sigmahat, 
                                                         lambda = seq(0,
-                                                                     max(abs(Sigmahat)), length.out = 1000)))
+                                                                     max(abs(Sigmahat)), length.out = nlambda)))
             times[[paste0(N)]] <- list(loglik = tllb, frobenius = tlsb, lasso = tlasso, 
                                        glasso = tglasso)
             results[[paste0(N)]] <- list(loglik = resllb,
