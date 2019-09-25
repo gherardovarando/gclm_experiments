@@ -6,44 +6,51 @@ library(ggplot2)
 source("functions/util.R")
 
 p <- 10
-N <- 100000
-d <- 2 / p
+N <- 5000
+d <- 1 / p
 
 Btrue <- rStableMetzler(n = p, p = d, lower = FALSE, rfun = function(n) 
                          rnorm(n, sd = 1), 
                         rdiag = rnorm)
 
 plot(graph_from_adjacency_matrix(sign(abs(t(Btrue)))))
-Ctrue <- diag(p)
-#Ctrue <- diag(runif(p, min = 0, max = 1))
+#Ctrue <- diag(p)
+Ctrue <- diag(runif(p, min = 0, max = 1))
 #Ctrue <- diag(1 + runif(p, min = -0.5,2))
 #Ctrue <- diag(p:1)
 
 exper <- rOUinv(N, Btrue, C = Ctrue)
 
-Sigmahat <- cor(exper$data)
+Sigmahat <- cov(exper$data) 
 #Sigmahat <- cov2cor(exper$Sigma)
 
 ########## path solutions
-system.time(resllb <- llBpath(Sigmahat, eps = 1e-5, 
-                               B0 = NULL,
-                               lambdas = seq(0,2,length.out = 100),
+#C0 <- diag(1 / diag(Sigmahat))
+C0 <- diag(p)
+Sigmahat <- cov2cor(Sigmahat)
+system.time(resllb <- llBpath(Sigmahat, eps = 1e-6, 
+                               B0 = NULL, C =  C0, 
+                               lambdas = seq(0, 3 ,length.out = 1000),
                                maxIter = 5000, job = 11))
 
-system.time(reslsb <- lsBpath(Sigmahat, eps = 1e-5, 
-                  lambdas = seq(0,3,length.out = 100),
+system.time(reslsb <- lsBpath(Sigmahat, eps = 1e-6,  C = C0,
+                  lambdas = seq(0,3,length.out = 1000),
                   maxIter = 5000, job = 11))
 
-reslasso <- lassoB(Sigmahat, C = diag(p))
+system.time(reslasso <- lassoB(Sigmahat, C = C0))
 
-resglasso <- glassoB(Sigmahat, 
-                     lambda = seq(0, max(abs(Sigmahat)), length.out = 100))
+system.time(resglasso <- glassoB(Sigmahat, 
+                     lambda = seq(0, max(abs(Sigmahat)), length.out = 1000)))
 
 evllb <- evaluatePathB(results = resllb, Btrue) 
 evlsb <- evaluatePathB(results = reslsb, Btrue) 
 evlasso <- evaluatePathB(results = reslasso, Btrue)
 evglasso <- evaluatePathB(results = resglasso, Btrue)
 
+evllb$confusion$npar
+evlsb$confusion$npar
+evlasso$confusion$npar
+evglasso$confusion$npar
 AUROC(evllb$roc)
 AUROC(evlsb$roc)
 AUROC(evlasso$roc)
@@ -78,11 +85,32 @@ min(evlsb$confusion$errs)
 min(evlasso$confusion$errs)
 min(evglasso$confusion$errs)
 
-deltaGraph( Btrue,resllb[[15]]$B, edge.arrow.size = 0.3, layout = layout_in_circle)
-deltaGraph( Btrue,reslasso[[80]]$B, edge.arrow.size = 0.3, layout = layout_in_circle)
+deltaGraph( Btrue,resllb[[which.min(evllb$confusion$errs)]]$B, edge.arrow.size = 0.3, layout = layout_in_circle)
+deltaGraph( Btrue,reslasso[[which.min(evlasso$confusion$errs)]]$B, edge.arrow.size = 0.3, layout = layout_in_circle)
 
 mllB(resllb[[which.max(evllb$confusion$f1)]]$B, S = (Sigmahat))
 mll(solve(Sigmahat), Sigmahat)
+################### stability 
+
+
+stab <- llBstabilitypath(exper$data, replicates = 100, 
+                         eps = 1e-6, job = 0,
+                         lambdas = seq(0,2,length.out = 100))
+
+plot.new()
+plot.window(xlim = c(0,50), ylim = c(0,1))
+for (i in 1:p){
+  for (j in 1:p){
+    if (i != j){
+       if (Btrue[i,j] != 0){
+         lines(stab[i,j, 50: 1], col = "blue")         
+       }else{
+         lines(stab[i,j, 50 :1], col = "red")         
+       }
+    }
+  }
+}
+
 ################## Estimate C (B known)
 
 p <- 10
@@ -105,9 +133,9 @@ max(abs(out$C - Ctrue))
 
 #################### estimate B and C
 
-p <- 20
-N <- 10000
-d <- 2 / p
+p <- 10
+N <- 1000
+d <- 3 / p
 Btrue <- rStableMetzler(n = p, p = d, lower = TRUE, rfun = function(n) 
   rnorm(n, sd = 1), 
   rdiag = rnorm)
@@ -120,6 +148,7 @@ Sigmahat <- cov(exper$data)
 
 C0 <- diag(p)
 B0 <- - 0.5 * C0 %*% solve(Sigmahat)
+B0 <- B0(p)
 deltaGraph(Btrue, Btrue, edge.arrow.size = 0.3, layout = layout_with_fr)
 #B0 <- B0(p)
 #B0 <- sign(abs(Btrue))
@@ -127,8 +156,8 @@ deltaGraph(Btrue, Btrue, edge.arrow.size = 0.3, layout = layout_with_fr)
 #B0 <- lowertriangB(Sigmahat)
 out <- pnllbc(Sigma = Sigmahat, B = B0, C = C0, C0 = C0,
               eps = 1e-17, alpha = 0.5, beta = 0.25, maxIter = 1000, 
-              intitr = 1,
-              lambda = 0.15, lambdac = 0.0005, job = 11)
+              intitr = 1000,
+              lambda = 0.03, lambdac = 0.0005, job = 0)
 Best <- proxgradllB(Sigmahat, out$B, C = out$C, 
                     job = 10, eps = 1e-16, lambda = 0, maxIter = 1e3)$B
 Cest <- graddsllc(Sigmahat, Best, out$C, eps = 1e-15, maxIter = 1000)$C

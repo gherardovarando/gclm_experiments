@@ -192,6 +192,18 @@ TPR <- function(x, y){
    sum(x != 0 & y != 0) / sum(y !=0) 
 }
 
+## area under precision-recall curve
+AUCPR <- function(x){
+  temp <- 0
+  n <- nrow(x)
+  for (i in 1:(n - 1)){
+    ## trapezoidal quadrature rule
+    temp <- temp + (x$precision[i + 1] + x$precision[i]) * 
+      ( x$recall[i] - x$recall[i + 1]) / 2
+  }
+  return(temp)
+}
+
 
 #' Generate a naive stable matrix 
 #' 
@@ -217,7 +229,9 @@ evaluatePathB <- function(results, B){
                                     errs = sum(res$B[ix] !=0 & B[ix] ==0) + 
                                       sum(res$B[ix] == 0 & B[ix] !=0)))))
   conf$tpr <- conf$tp / (conf$tp + conf$fn)
+  conf$tpr[is.nan(conf$tpr)] <- 1
   conf$tnr <- conf$tn / (conf$tn + conf$fp)
+  conf$tnr[is.nan(conf$tnr)] <- 1
   conf$bacc <- (conf$tpr + conf$tnr) / 2
   conf$precision <- conf$tp / (conf$tp + conf$fp)
   conf$precision[is.nan(conf$precision)] <- 1
@@ -251,18 +265,15 @@ lassoB <- function(Sigma, C = diag(nrow(Sigma)), lambda = NULL){
                   standardize = FALSE,
                   nlambda = 3,
                   penalty.factor = 1 - diag(p))
-    lambdamax <- max(tmp$lambda)
-    lambda <- seq(lambdamax, 0, length.out =  100)
+    lambdamax <- max(tmp$lambda) * 1.1
+    lambda <- seq(lambdamax, 0, length.out =  1000)
   }
-
+ 
   tmp <- glmnet(AA, y = -c(C),
                 intercept = FALSE,
                 standardize = FALSE,
-                nlambda = 100,
                 lambda = lambda,
-                lambda.min.ratio = 1e-8,
-                penalty.factor = 1 - diag(p),
-                maxit = 1e+8)
+                penalty.factor = 1 - diag(p))
 ### ATTENTION if use glmnet change to tmp$beta[,i]:
 ### if use lars change to tmp$beta[i,]
     obj <- lapply(length(tmp$lambda):1, function(i){
@@ -317,24 +328,25 @@ plotROCS <- function(x, title = NULL){
 }
 
 
-igraph.to.tikz <- function (graph, layout) {
+igraph.to.tikz <- function (graph, layout, file = "") {
   ## Here we get the matrix layout
   if (class(layout) == "function")
     layout <- layout(graph)
   
   layout <- layout / max(abs(layout))
-  
+  mycat <- function(...) cat(..., file = file, append = TRUE)
   ##TikZ initialisation and default options (see pgf/TikZ manual)
-  cat("\\tikzset{\n")
-  cat("\tnode/.style={circle,inner sep=1mm,minimum size=0.8cm,draw,very thick,black,fill=red!20,text=black},\n")
-  cat("\tnondirectional/.style={very thick,black},\n")
-  cat("\tunidirectional/.style={nondirectional,shorten >=2pt,-stealth},\n")
-  cat("\tbidirectional/.style={unidirectional,bend right=10}\n")
-  cat("}\n")
-  cat("\n")
+  cat("\\tikzset{\n", file = file, append = FALSE)
+  mycat("\tnode/.style={circle,inner sep=1mm,minimum size=0.8cm,draw,
+      very thick,black,fill=red!20,text=black},\n")
+  mycat("\tnondirectional/.style={very thick,black},\n")
+  mycat("\tunidirectional/.style={nondirectional,shorten >=2pt,-stealth},\n")
+  mycat("\tbidirectional/.style={unidirectional,bend right=10}\n")
+  mycat("}\n")
+  mycat("\n")
   
   ##Size
-  cat("\\begin{tikzpicture}[scale=5]\n")
+  mycat("\\begin{tikzpicture}[scale=5]\n")
   
   for (i in 1:length(V(graph))) {
     vertex <- V(graph)[i]
@@ -343,9 +355,9 @@ igraph.to.tikz <- function (graph, layout) {
       label <- ""
     
     ##drawing vertices
-    cat (sprintf ("\t\\node [node] (v%d) at (%f, %f)\t{%s};\n", vertex, layout[i,1], layout[i,2], label))
+    mycat (sprintf ("\t\\node [node] (v%d) at (%f, %f)\t{%s};\n", vertex, layout[i,1], layout[i,2], label))
   }
-  cat("\n")
+  mycat("\n")
   
   adj = get.adjacency(graph)
   bidirectional = adj & t(adj)
@@ -354,7 +366,7 @@ igraph.to.tikz <- function (graph, layout) {
     for (line in 1:nrow(adj)) {
       for (col in line:ncol(adj)) {
         if (adj[line,col]&col>line) {
-          cat (sprintf ("\t\\path [nondirectional] (v%d) edge (v%d);\n", line, col)) ##edges drawing
+          mycat(sprintf ("\t\\path [nondirectional] (v%d) edge (v%d);\n", line, col)) ##edges drawing
         }
       }
     }
@@ -362,12 +374,12 @@ igraph.to.tikz <- function (graph, layout) {
     for (line in 1:nrow(adj)) {
       for (col in 1:ncol(adj)) {
         if (bidirectional[line,col]&line > col)
-          cat (sprintf ("\t\\path [bidirectional] (v%d) edge (v%d);\n", line, col),
+          mycat(sprintf ("\t\\path [bidirectional] (v%d) edge (v%d);\n", line, col),
                sprintf ("\t\\path [bidirectional] (v%d) edge (v%d);\n", col, line)) ##edges drawing
         else if (!bidirectional[line,col]&adj[line,col]) 
-          cat (sprintf ("\t\\path [unidirectional] (v%d) edge (v%d);\n", line, col)) ##edges drawing
+          mycat(sprintf ("\t\\path [unidirectional] (v%d) edge (v%d);\n", line, col)) ##edges drawing
       }
     }
   
-  cat("\\end{tikzpicture}\n")
+  mycat("\\end{tikzpicture}\n")
 }
