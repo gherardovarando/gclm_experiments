@@ -256,28 +256,16 @@ lassoB <- function(Sigma, C = diag(nrow(Sigma)),
   MM <- matrix(nrow = p, ncol = p, 1:(p^2))
   TT  <- diag(p ^ 2)[c(t(MM)),]
   AA <- Sigma %x% diag(p) + ( (diag(p) %x% Sigma) %*% TT)
-#  tmp <- lars(AA, y = - c(C),
-#               type = "lasso",
-#                intercept = FALSE,
-#                normalize = FALSE )
-  if (is.null(lambda)){
-    tmp <- glmnet(AA, y = -c(C),
-                  intercept = FALSE,
-                  standardize = FALSE,
-                  nlambda = 3,
-                  penalty.factor = 1 - diag(p))
-    lambdamax <- max(tmp$lambda) * 1.1
-    lambda <- seq(lambdamax, 0, length.out =  nlambda)
-  }
- 
+  maxlambda <- max(abs(apply(AA, MARGIN = 2, function(cc) sum(cc * c(C)) /
+                               sqrt(sum(cc^2)) ))) / sqrt(sum(C * C))
+  lambda <- maxlambda * lambda
   tmp <- glmnet(AA, y = -c(C),
                 intercept = FALSE,
                 standardize = FALSE,
+                lambda.min.ratio = 0.00001,
                 lambda = lambda,
                 nlambda = nlambda,
                 penalty.factor = 1 - diag(p))
-### ATTENTION if use glmnet change to tmp$beta[,i]:
-### if use lars change to tmp$beta[i,]
     obj <- lapply(length(tmp$lambda):1, function(i){
     list(B = matrix(nrow =p, ncol = p, data = tmp$beta[,i]), 
          lambda = tmp$lambda[i])

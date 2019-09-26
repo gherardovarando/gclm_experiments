@@ -5,12 +5,11 @@ rep <- 100
 Ns <- as.character(c(50, 100, 200, 300, 400, 500,
                      600, 700, 800, 900, 
                      1000, 2000, 3000, 4000, 5000))
-ks <- c(1, 2, 3, 4)
+ks <- c(1,2, 3, 4)
 n <- length(Ns)
 p <- 10
-for (typeC in c("randomC")){
-  for (typeB in c("general")){
-    
+for (typeC in c("unknowC")){
+  for (typeB in c("general", "lowertriangular")){
     algs <- c("loglik", "frobenius", "lasso", "glasso")
     restable <- array(dim = c(9, length(algs), length(ks), length(Ns), rep), 
                       dimnames = list(stats = c("auroc", "maxacc", "maxf1", 
