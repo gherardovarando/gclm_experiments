@@ -1,15 +1,15 @@
 library(ggplot2)
 source("functions/util.R")
 
-rep <- 100
+rep <- 20
 Ns <- as.character(c(50, 100, 200, 300, 400, 500,
                      600, 700, 800, 900, 
                      1000, 2000, 3000, 4000, 5000))
-ks <- c(1,2, 3, 4)
+ks <- c(1,2,3,4)
 n <- length(Ns)
 p <- 10
-for (typeC in c("unknowC")){
-  for (typeB in c("general", "lowertriangular")){
+for (typeC in c("knowC")){
+  for (typeB in c("general")){
     algs <- c("loglik", "frobenius", "lasso", "glasso")
     restable <- array(dim = c(9, length(algs), length(ks), length(Ns), rep), 
                       dimnames = list(stats = c("auroc", "maxacc", "maxf1", 

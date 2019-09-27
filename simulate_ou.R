@@ -8,15 +8,15 @@ p <- 10
 rep <- 100
 nlambda <- 100
 lambdaseq <- c(0, exp(10 * (1-(nlambda:1))/nlambda))
-for (knowC in c(FALSE, TRUE)){
-    for (lower in c(TRUE)){
-      typeC <- ifelse(knowC, "knowC")
+for (knowC in c(TRUE)){
+    for (lower in c(FALSE)){
+      typeC <- ifelse(knowC, "knowC", "unknowC")
       typeB <- ifelse(lower, "lowertriangular", "general")
-      for (k in c(1, 2, 3, 4)){
+      for (k in c(4)){
         path <- paste0("simulations/", typeC, "/", typeB, "/p", p, "/k", k, "/")
         dir.create(path, showWarnings = FALSE, recursive = TRUE)
         d <- k / p
-        for (r in 33:rep){
+        for (r in 38:rep){
           Btrue <- rStableMetzler(n = p, p = d, lower = lower, rfun = function(n) 
             rnorm(n, sd = 1), 
             rdiag = rnorm)
