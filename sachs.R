@@ -44,22 +44,23 @@ datalist <- lapply(
 
 p <- ncol(datalist[[1]])
 
-## set seed 
-#set.seed(1)
-########################## ESTIMATE GRAPH
+dataall <- datalist[[1]]
+for (i in 2:length(datalist)){
+  dataall <- rbind(dataall, datalist[[i]])
+}
+
+########################## ESTIMATE GRAPHS
 results <- lapply(1:length(datalist), function(i) {
   D <- datalist[[i]]
   message("estimating for dataset ",i, "/", length(datalist))
-#  replicate(100, {
-    idxTest <- sample(nrow(D), size = nrow(D) / 2) #TEST
-    SigmaTrain <- cor(D[-idxTest, ])
-    SigmaTest <-  cor(D[idxTest, ])
-    ### estimate path 
-    resultspath <- llBpath(SigmaTrain,
+  SigmaTrain <- cor(D)
+  SigmaTest <-  cor(dataall)
+  ### estimate path 
+  resultspath <- llBpath(SigmaTrain,
                            lambdas = 2*exp((1-(50:1))/5) ,
                            eps = 1e-6, job = 11, maxIter = 5000)
-    ### fit MLE to all path
-    resultspath <- lapply(resultspath, function(res) {
+  ### fit MLE to all path
+  resultspath <- lapply(resultspath, function(res) {
       proxgradllB(
         SigmaTrain,
         B = res$B,
@@ -69,33 +70,30 @@ results <- lapply(1:length(datalist), function(i) {
         job = 10
       )
     })
-    ### compute minus loglik
-    tmp <- sapply(resultspath, function(res) {
+  ### compute minus loglik
+  tmp <- sapply(resultspath, function(res) {
       mll(solve(res$Sigma), SigmaTest)
     })
-    bidx <- which.min(tmp)
-    B <- resultspath[[bidx]]$B
-    adjmat <- sign(abs(t(B)))
-    colnames(adjmat) <- rownames(adjmat) <- colnames(datalist[[1]])
-    estgraph <- graph_from_adjacency_matrix(adjmat, diag = FALSE)
-    plot(estgraph,
+  bidx <- which.min(tmp)
+  B <- resultspath[[bidx]]$B
+  adjmat <- sign(abs(t(B)))
+  colnames(adjmat) <- rownames(adjmat) <- colnames(datalist[[1]])
+  estgraph <- graph_from_adjacency_matrix(adjmat, diag = FALSE)
+  plot(estgraph,
          edge.arrow.size = 0.3,
          layout = layout_in_circle(estgraph, order = order))
     
-    #### saving graph to tkiz format
-    message("saving graph to graphs folder")
-    igraph.to.tikz(estgraph, layout_in_circle(estgraph, order = order), 
+  #### saving graph to tkiz format
+  message("saving graph to graphs folder")
+  igraph.to.tikz(estgraph, layout_in_circle(estgraph, order = order), 
                    file = paste0("resultsSachs/graphs/sachsGraph_condition", i,  ".txt"))#
-#    return(sign(abs(resultspath[[bidx]]$B)))
-#  })
+  return(B)
 })
 message("done")
 
-averages <- lapply(results, function(res){
-  matrix(nrow = p, ncol = p, data = apply(res, MARGIN = c(1,2), FUN = mean))
-})
+
 B <- matrix(nrow = p, ncol = p, 
-            data = rowMeans(sapply(averages, function(x) x > 0.9  )))
+            data = rowMeans(sapply(results, function(x) sign(abs(x))  )))
 
 #### saving results
 
@@ -131,19 +129,3 @@ for (thr in thrs){
   
 }
 
-
-
-data <- datalist[[1]]
-for (i in 2:length(datalist)){
-  data <- rbind(data, datalist[[i]])
-}
-path <- llBpath(cor(data), lambdas = 2*exp((1-(100:1))/10), 
-                job = 11, eps = 1e-6 )
-sapply(path, function(x) sum(x$B != 0) - p)
-B <- path[[77]]$B
-adjmat <- sign(abs(t(B)))
-colnames(adjmat) <- rownames(adjmat) <- colnames(datalist[[1]])
-estgraph <- graph_from_adjacency_matrix(adjmat, diag = FALSE)
-plot(estgraph,
-     edge.arrow.size = 0.3,
-     layout = layout_in_circle(estgraph, order = order))

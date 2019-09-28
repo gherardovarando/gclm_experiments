@@ -1,7 +1,7 @@
 library(ggplot2)
 source("functions/util.R")
 
-rep <- 20
+rep <- 100
 Ns <- as.character(c(50, 100, 200, 300, 400, 500,
                      600, 700, 800, 900, 
                      1000, 2000, 3000, 4000, 5000))
