@@ -33,7 +33,7 @@ for (P in Ps) {
             rnorm(n, sd = 1),
           rdiag = rnorm
         )
-      Ctrue <- diag(runif(p))
+      Ctrue <- diag(runif(P))
       exper <- rOUinv(5000, Btrue, C = Ctrue)
       results <- list()
       times <- list()
@@ -86,7 +86,7 @@ for (P in Ps) {
                                      glasso = resglasso)
       }
       name <- paste0("rep", r, ".RData")
-      message("DONE rep ", r, typeC, typeB,
+      message("DONE rep ", r, "P = ", P,
               " p=", p, " k=", k)
       save(
         file = paste0(path, name),
