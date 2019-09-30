@@ -7,13 +7,13 @@ source("functions/util.R")
 rescaleC <- FALSE
 lower <- FALSE
 p <- 10
-Ps <- c(10, 12, 15, 20)
+Ps <- c(10, 12, 15, 20, 25, 30)
 rep <- 100
 nlambda <- 100
 lambdaseq <- c(0, exp(10 * (1 - (nlambda:1)) / nlambda))
 for (P in Ps) {
   for (k in c(1,2,3,4)) {
-    path <- paste0("simulations/",
+    path <- paste0("simulations2/",
                    "/p",
                    p,
                    "P",
@@ -22,7 +22,7 @@ for (P in Ps) {
                    k,
                    "/")
     dir.create(path, showWarnings = FALSE, recursive = TRUE)
-    d <- k / P
+    d <- k / p
     for (r in 1:rep) {
       Btrue <-
         rStableMetzler(

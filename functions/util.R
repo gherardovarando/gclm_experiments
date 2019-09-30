@@ -285,6 +285,22 @@ glassoB <- function(Sigma, lambda = NULL){
 }
 
 
+covthr <- function(Sigma, lambda = NULL){
+  Sigma <- cov2cor(Sigma)
+  if (is.null(lambda)){
+    lambda <- sort(unique(Sigma[lower.tri(Sigma)]))
+  }
+  lapply(1:length(lambda), function(thr){
+    B <- Sigma
+    B[B < thr] <- 0
+    list(B = sign(abs(B)), lambda = thr)
+  })
+}
+
+
+
+
+
 library(ggplot2)
 
 plotROC <- function(roc){
