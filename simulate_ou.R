@@ -7,16 +7,16 @@ source("functions/util.R")
 rescaleC <- FALSE
 lower <- FALSE
 p <- 10
-Ps <- c(10, 12, 15, 20, 25, 30)
+Ps <- c(10, 12, 15, 20, 25, 30, 35, 40)
 rep <- 100
 nlambda <- 100
 lambdaseq <- c(0, exp(10 * (1 - (nlambda:1)) / nlambda))
 for (P in Ps) {
   for (k in c(1,2,3,4)) {
-    path <- paste0("simulations2/",
+    path <- paste0("simulationsNew/",
                    "/p",
                    p,
-                   "P",
+                   "/P",
                    P,
                    "/k",
                    k,
@@ -72,18 +72,40 @@ for (P in Ps) {
               lambdas = 3 * lambdaseq
             )
           )
+        tfrobenius <-
+          system.time(
+            resfrobenius <- lsBpath(
+              Sigmahat,
+              eps = 1e-6,
+              C = C0,
+              maxIter = 5000,
+              job = 11,
+              lambdas = 3 * lambdaseq
+            )
+          )
         tlasso <-
           system.time(reslasso <- lassoB(Sigmahat, C = C0,
                                          lambda = lambdaseq))
+        tlassoc <-
+          system.time(reslassoc <- lassoB(cov(exper$data[1:N,1:p]), 
+                                          C = Ctrue,
+                                         lambda = lambdaseq))
         tglasso <- system.time(resglasso <- glassoB(Sigmahat,
                                                     lambda = lambdaseq * max(diag(Sigmahat))))
+        tcovthr <- system.time(rescovthr <- covthr(Sigmahat))
         times[[paste0(N)]] <-
           list(loglik = tllb,
+               frobenius = tfrobenius,
                lasso = tlasso,
-               glasso = tglasso)
+               lassoc = tlassoc,
+               glasso = tglasso,
+               covthr = tcovthr)
         results[[paste0(N)]] <- list(loglik = resllb,
+                                     frobenius = resfrobenius,
                                      lasso = reslasso,
-                                     glasso = resglasso)
+                                     lassoc = reslassoc,
+                                     glasso = resglasso,
+                                     covthr = rescovthr)
       }
       name <- paste0("rep", r, ".RData")
       message("DONE rep ", r, "P = ", P,

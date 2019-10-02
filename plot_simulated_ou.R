@@ -5,10 +5,12 @@ rep <- 100
 Ns <- as.character(c(50, 100, 200, 300, 400, 500,
                      600, 700, 800, 900, 
                      1000, 2000, 3000, 4000, 5000))
-ks <- c(1,2,3,4)
-Ps <- as.character(c(10, 12, 15, 20))
+ks <- c(1,2)
+Ps <- as.character(c(10))
 n <- length(Ns)
 p <- 10
+algs <- c("loglik", "frobenius", "lasso", "lassoc", 
+                     "glasso", "covthr")
 restable <- array(dim = c(9, length(algs), length(ks), length(Ps), length(Ns), rep), 
                   dimnames = list(stats = c("auroc", "maxacc", "maxf1", 
                                             "maxbacc", "elapsed", "aucpr",
@@ -20,21 +22,20 @@ restable <- array(dim = c(9, length(algs), length(ks), length(Ps), length(Ns), r
                                   N = Ns, 
                                   rep = 1:rep), data = NA)
 for (P in Ps){
-    algs <- c("loglik", "lasso", "glasso")
-    plotpath <- paste0("plot/simulations/","p",p , "P" , P, "/" )
+    plotpath <- paste0("plot/simulationsNew/","p",p , "/P" , P, "/" )
     dir.create(plotpath, showWarnings = FALSE, recursive = TRUE)
     for (k in ks){
       for (i in 1:rep){
-        filepath <- paste0("simulations/", "p",p, "/P", P , "/k", k,"/"
+        filepath <- paste0("simulationsNew/", "p",p, "/P", P , "/k", k,"/"
                            , "rep", i, ".RData" )
         load(filepath)
         P <- paste0(P)
         for (N in Ns){
           npar <- sum(exper$B !=0 ) - p
           evals <- lapply(results[[paste0(N)]], evaluatePathB, B = exper$B[1:p,1:p])
+          algs <- names(evals)
           restable["auroc" ,algs,k,P,N,i] <- sapply(evals, function(x) 
             AUROC(x$roc))
-
           restable["maxacc",algs,k,P,N,i] <- sapply(evals, function(x){
             ( 1 - (min(x$confusion$err) / (p*(p - 1)) ))  
           })
@@ -89,8 +90,8 @@ for (P in Ps){
                  rows = vars(stats), 
                  scales = "free_y") + 
       geom_path() + 
-#      geom_hline(data = df2, 
-#                 aes(yintercept = Y), linetype = "dotted") +
+      geom_hline(data = df2, 
+                 aes(yintercept = Y), linetype = "dotted") +
       scale_x_log10() +
       theme_bw() + 
       scale_y_continuous(limits = function(x){
@@ -109,8 +110,8 @@ for (P in Ps){
     
 }
 
-plotpath <- paste0("plot/simulations/","p",p , "/" )
-N <- "1000"
+plotpath <- paste0("plot/simulationsNew/" )
+N <- "3000"
 avgrestable <- apply(restable[,,,,N,], MARGIN = 1:4, mean)
 df <- expand.grid(dimnames(avgrestable))
 df <- cbind(df,Y = (apply(df, 1, function(x){
@@ -125,6 +126,8 @@ ggplot(df1, aes(x = P, y = Y, group = Algorithm,
              rows = vars(stats), 
              scales = "free_y") + 
   geom_path() + 
+  geom_hline(data = df2, 
+             aes(yintercept = Y), linetype = "dotted") +
   theme_bw() + 
   scale_y_continuous(limits = function(x){
     x <- x + c(-0.0005, 0.0005) * x

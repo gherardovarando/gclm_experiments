@@ -1,4 +1,6 @@
 *.RData
 plot
 simulations
-graphs
+graphs/
+proteinsignaling/
+*.pdf

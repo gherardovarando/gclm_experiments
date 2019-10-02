@@ -2,7 +2,7 @@ library(clggm)
 library(igraph)
 source("functions/util.R")
 
-dir.create("sachs/", 
+dir.create("proteinsignaling/", 
            showWarnings = FALSE, recursive = TRUE)
 filenames <- c(
   "cd3cd28",
@@ -48,7 +48,7 @@ results_A <- sapply(1:length(datalist), function(i) {
   SigmaTrain <- cor(D)
   SigmaTest <-  cor(DD)
   ### estimate path 
-  resultspath <- llBpath(SigmaTrain,
+  resultspath <- llBpath(SigmaTrain, 
                            lambdas = 2*exp((1-(50:1))/5) ,
                            eps = 1e-6, job = 11, maxIter = 5000)
   ### fit MLE to all path
@@ -84,7 +84,7 @@ results_B <- sapply(1:nreps, function(rep){
   idx <- sample(1:nrow(dataall), size = nrow(dataall) / 10, replace = FALSE)
   SigmaTrain <- cor(dataall[idx,])
   SigmaTest <- cor(dataall[-idx,])
-  resultspath <- llBpath(SigmaTrain,
+  resultspath <- llBpath(SigmaTrain, 
                          lambdas = 2*exp((1-(50:1))/5) ,
                          eps = 1e-6, job = 11, maxIter = 5000)
   ### fit MLE to all path
@@ -111,33 +111,45 @@ results_B <- sapply(1:nreps, function(rep){
 B_B <- matrix(nrow = 11, ncol = 11, 
               data = rowMeans(sign(abs(results_B)))) 
 
-###################### PATH ON ALL DATA TESTED ON CONDITIONS
-respath <- llBpath(cor(dataall), lambdas = 2*exp((1-(50:1))/5), 
-                   eps = 1e-6, maxIter = 5000, job = 11  )
+#####################################################
+results_C <- array(data = NA, dim = c(11, 11, 9, nreps))
+ for (i in 1:9){
+   message("estimating for dataset ",i, "/", length(datalist))
+   D <- datalist[[i]]
+   for (rep in 1:nreps){
+     message("rep ",rep, "/", nreps)
+     ixs <- sample(1:nrow(D), size = nrow(D)/2, replace = FALSE)
+     SigmaTrain <- cor(D[ixs,])
+     SigmaTest <-  cor(D[-ixs,])
+     ### estimate path 
+     resultspath <- llBpath(SigmaTrain, 
+                            lambdas = 2*exp((1-(50:1))/5) ,
+                            eps = 1e-6, job = 11, maxIter = 5000)
+     ### fit MLE to all path
+     resultspath <- lapply(resultspath, function(res) {
+       proxgradllB(
+         SigmaTrain,
+         B = res$B,
+         C = res$C,
+         lambda = 0,
+         eps = 1e-10,
+         job = 10
+       )
+     })
+     ### compute minus loglik
+     tmp <- sapply(resultspath, function(res) {
+       mll(solve(res$Sigma), SigmaTest)
+     })
+     bidx <- which.min(tmp)
+     results_C[,,i, rep] <- resultspath[[bidx]]$B
+   }
+ }
 
-respath <- lapply(respath, function(res) {
-  proxgradllB(cor(dataall), B = res$B, C= res$C,  eps = 1e-6,
-              maxIter = 5000, lambda = 0, job = 10)
-})
-
-results_C <- sapply(1:length(datalist), function(i){
-  tmp <- sapply(respath, function(res){
-    mll(solve(res$Sigma), cor(datalist[[i]]))
-  })
-  bidx <- which.min(tmp[-50])
-  respath[[bidx]]$B
-})
-
-B_C <- matrix(nrow = 11, ncol = 11, 
-                data = rowMeans(sign(abs(results_C))))
+B_C <- apply(results_C, MARGIN = c(1,2), function(x) mean(abs(sign(x))))
 
 
-colnames(B_A) <- colnames(B_B) <- colnames(B_C) <- colnames(dataall)
-rownames(B_A) <- rownames(B_B) <- rownames(B_C) <- colnames(dataall)
-save(file = "sachs/results.RData", list = c("results_A", 
-                                             "results_B",
-                                            "results_C",
-                                          "B_A", "B_B", "B_C"))
-
-
+save(file = "proteinsignaling/results.RData", list = c("results_A", 
+                                                       "results_B",
+                                                       "results_C",
+                                                       "B_A", "B_B", "B_C"))
 

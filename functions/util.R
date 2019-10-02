@@ -218,7 +218,7 @@ B0 <- function(p){
 }
 
 
-evaluatePathB <- function(results, B){
+evaluatePathB <- function(results, B, nrecall = 100){
   ix <- lower.tri(B) | upper.tri(B)
   conf <- as.data.frame(t(sapply(results, function(res) c(lambda = res$lambda, 
                                     npar = sum(res$B[ix]!=0),
@@ -239,12 +239,19 @@ evaluatePathB <- function(results, B){
   conf$recall[is.nan(conf$recall)] <- 1
   conf$f1 <- 2 * (conf$precision * conf$recall) / (conf$precision + conf$recall)
   conf$f1[is.nan(conf$f1)] <- 0
+  ### compute roc
   roc <- t(sapply(results, function(res){
     c(FPR = FPR(res$B[ix], B[ix]), TPR = TPR(res$B[ix], B[ix]) )
   }))
+  #### extend roc curve
   roc <- roc[dim(roc)[1]:1,]
   roc <- rbind(c(0,0), roc, c(1,1))
-  return(list(roc = roc, confusion = conf))
+  ##### interpolate precision over a fixed grid of recall values
+  xr <- seq(0,1,length.out = 100)
+  yp <- approx(conf$recall, conf$precision, xout = xr) 
+  cpr <- data.frame(recall = xr, precision = yp)
+  #### 
+  return(list(roc = roc, confusion = conf, cpr = cpr))
 }
 
 
@@ -290,7 +297,7 @@ covthr <- function(Sigma, lambda = NULL){
   if (is.null(lambda)){
     lambda <- sort(unique(Sigma[lower.tri(Sigma)]))
   }
-  lapply(1:length(lambda), function(thr){
+  lapply(lambda, function(thr){
     B <- Sigma
     B[B < thr] <- 0
     list(B = sign(abs(B)), lambda = thr)
@@ -388,4 +395,27 @@ igraph.to.tikz <- function (graph, layout, file = "") {
     }
   
   mycat("\\end{tikzpicture}\n")
+}
+
+
+savegraphs <- function(B, path, layout, names){
+  dir.create(path, 
+             showWarnings = FALSE, recursive = TRUE)
+  colnames(B) <- rownames(B) <- names
+  thrs <- c(sort(unique(c(B))))
+  for (thr in thrs){
+    adjmat <- sign(abs(t(B > thr)))
+    estgraph <- graph_from_adjacency_matrix(adjmat, diag = FALSE)
+    
+    ### save plot
+    pdf(paste0(path,"graph_thr", thr,  ".pdf"))
+    plot(estgraph, layout = layout, edge.arrow.size = 0.3)
+    dev.off()
+    #### saving graph to tkiz format
+    message("saving graph to graphs folder")
+    igraph.to.tikz(estgraph, layout, 
+                   file = paste0(path,"graph_thr", thr,  ".txt"))
+    
+  }
+  
 }
