@@ -11,6 +11,7 @@ n <- length(Ns)
 p <- 10
 algs <- c("loglik", "frobenius", "lasso", "lassoc", 
                      "glasso", "covthr")
+algsel <- c("loglik", "frobenius", "lasso", "glasso", "covthr") 
 restable <- array(dim = c(9, length(algs), length(ks), length(Ps), length(Ns), rep), 
                   dimnames = list(stats = c("auroc", "maxacc", "maxf1", 
                                             "maxbacc", "elapsed", "aucpr",
@@ -81,6 +82,7 @@ for (P in Ps){
     selected <- c("maxacc", "maxf1", "auroc", "aucpr")
     
     df1 <- df[df$stats %in% selected,]
+    df1 <- df1[df1$Algorithm %in% algsel, ]
     df1$k <- paste0("k=",df1$k)
     df2 <- data.frame(k = paste0("k=",ks), 
                       stats = "maxacc", Y =  1 - ks / p)
@@ -104,10 +106,14 @@ for (P in Ps){
       }, expand = expand_scale(0,0)) + 
       theme(legend.position = "bottom", 
             axis.title.y = element_blank(),
-            axis.text.x = element_text(angle = 30)) + 
+            axis.text.x = element_text(angle = 30),
+            legend.box.spacing = unit(0.5, "lines"),
+            legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt"),
+            plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt")) + 
       ggsave(paste0("p", p,"P",P, ".pdf"), path = plotpath,
              width = 6, height = 6, units = "in")
     
+      message("saved plot p=",p, " P=", P)  
 }
 
 plotpath <- paste0("plot/simulations/" )
@@ -118,6 +124,7 @@ df <- cbind(df,Y = (apply(df, 1, function(x){
   avgrestable[x[1], x[2], x[3], x[4]]
 })))
 df1 <- df[df$stats %in% selected,]
+df1 <- df1[df1$alg %in% algsel, ]
 df1$k <- paste0("k=",df1$k)
 
 ggplot(df1, aes(x = P, y = Y, group = Algorithm, 

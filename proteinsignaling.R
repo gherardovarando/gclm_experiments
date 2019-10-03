@@ -31,88 +31,13 @@ datalist <- lapply(
 
 p <- ncol(datalist[[1]])
 
-dataall <- datalist[[1]]
-for (i in 2:length(datalist)){
-  dataall <- rbind(dataall, datalist[[i]])
-}
+message("data loaded correctly")
 
-########################## ESTIMATE GRAPHS FOR EACH CONDITION
-results_A <- sapply(1:length(datalist), function(i) {
-  D <- datalist[[i]]
-  idx <- (1:length(datalist))[-i]
-  DD <- datalist[[idx[1]]]
-  for (j in 2:length(idx)){
-    DD <- rbind(DD, datalist[[j]])
-  }
-  message("estimating for dataset ",i, "/", length(datalist))
-  SigmaTrain <- cor(D)
-  SigmaTest <-  cor(DD)
-  ### estimate path 
-  resultspath <- llBpath(SigmaTrain, 
-                           lambdas = 2*exp((1-(50:1))/5) ,
-                           eps = 1e-6, job = 11, maxIter = 5000)
-  ### fit MLE to all path
-  resultspath <- lapply(resultspath, function(res) {
-      proxgradllB(
-        SigmaTrain,
-        B = res$B,
-        C = res$C,
-        lambda = 0,
-        eps = 1e-10,
-        job = 10
-      )
-    })
-  ### compute minus loglik
-  tmp <- sapply(resultspath, function(res) {
-      mll(solve(res$Sigma), SigmaTest)
-    })
-  bidx <- which.min(tmp)
-  B <- resultspath[[bidx]]$B
-  
-  return(B)
-})
-message("done")
+#############################################
 
-
-B_A <- matrix(nrow = p, ncol = p, 
-            data = rowMeans(sign(abs(results_A))))
-
-
-########################################### REPETITIONS
+p < -11
 nreps <- 100
-results_B <- sapply(1:nreps, function(rep){
-  idx <- sample(1:nrow(dataall), size = nrow(dataall) / 10, replace = FALSE)
-  SigmaTrain <- cor(dataall[idx,])
-  SigmaTest <- cor(dataall[-idx,])
-  resultspath <- llBpath(SigmaTrain, 
-                         lambdas = 2*exp((1-(50:1))/5) ,
-                         eps = 1e-6, job = 11, maxIter = 5000)
-  ### fit MLE to all path
-  resultspath <- lapply(resultspath, function(res) {
-    proxgradllB(
-      SigmaTrain,
-      B = res$B,
-      C = res$C,
-      lambda = 0,
-      eps = 1e-6,
-      job = 10,
-      maxIter = 5000
-    )
-  })
-  ### compute minus loglik
-  tmp <- sapply(resultspath, function(res) {
-    mll(solve(res$Sigma), SigmaTest)
-  })
-  bidx <- which.min(tmp)
-  message("replicate ", rep, "/", nreps, " chosen:", bidx)
-  resultspath[[bidx]]$B
-})
-
-B_B <- matrix(nrow = 11, ncol = 11, 
-              data = rowMeans(sign(abs(results_B)))) 
-
-#####################################################
-results_C <- array(data = NA, dim = c(11, 11, 9, nreps))
+results<- array(data = NA, dim = c(11, 11, 9, nreps))
  for (i in 1:9){
    message("estimating for dataset ",i, "/", length(datalist))
    D <- datalist[[i]]
@@ -123,7 +48,7 @@ results_C <- array(data = NA, dim = c(11, 11, 9, nreps))
      SigmaTest <-  cor(D[-ixs,])
      ### estimate path 
      resultspath <- llBpath(SigmaTrain, 
-                            lambdas = 2*exp((1-(50:1))/5) ,
+                            lambdas = 2*exp((1-(100:1))/10) ,
                             eps = 1e-6, job = 11, maxIter = 5000)
      ### fit MLE to all path
      resultspath <- lapply(resultspath, function(res) {
@@ -141,15 +66,11 @@ results_C <- array(data = NA, dim = c(11, 11, 9, nreps))
        mll(solve(res$Sigma), SigmaTest)
      })
      bidx <- which.min(tmp)
-     results_C[,,i, rep] <- resultspath[[bidx]]$B
+     results[,,i, rep] <- resultspath[[bidx]]$B
    }
  }
 
-B_C <- apply(results_C, MARGIN = c(1,2), function(x) mean(abs(sign(x))))
 
 
-save(file = "proteinsignaling/results.RData", list = c("results_A", 
-                                                       "results_B",
-                                                       "results_C",
-                                                       "B_A", "B_B", "B_C"))
+save(file = "proteinsignaling/results.RData", list = c( "results"))
 

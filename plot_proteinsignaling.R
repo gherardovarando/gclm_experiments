@@ -40,7 +40,7 @@ B_C <- apply(results_C, MARGIN = c(1,2,3), function(x) {
 }  )
 
 B_C <- apply(B_C, c(1,2), function(x) {
-  mean(x > 0.7)
+  mean(x > 0.5)
 })
 
 savegraphs(B_C, "plot/proteinsignaling/graphs/C/", 
