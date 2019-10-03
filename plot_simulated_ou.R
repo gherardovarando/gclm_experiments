@@ -110,7 +110,7 @@ for (P in Ps){
     
 }
 
-plotpath <- paste0("plot/simulationsNew/" )
+plotpath <- paste0("plot/simulations/" )
 N <- "3000"
 avgrestable <- apply(restable[,,,,N,], MARGIN = 1:4, mean)
 df <- expand.grid(dimnames(avgrestable))

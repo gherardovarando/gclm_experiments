@@ -1,26 +1,53 @@
-args = commandArgs(trailingOnly=TRUE)
-if (length(args) == 0){ 
-   Ps <- c(10,12,15,20) 
-}else{
-   Ps <- as.numeric(args)
-}
-message("Ps = ", Ps)
+args = commandArgs(trailingOnly=TRUE)  
+
 library(clggm)
 library(igraph)
 library(ggplot2)
 source("functions/util.R")
 
+message("packages and util functions loaded correctly")
 
 rescaleC <- FALSE
 lower <- FALSE
 p <- 10
-#Ps <- c(10, 12, 15, 20, 25, 30, 35, 40)
+Ps <- c(10, 12, 15, 20, 25, 30, 35, 40)
 rep <- 100
 nlambda <- 100
+bpath <- "simulations/"
+if (length(args) != 0){ 
+  message("arguments found, parsing...")
+  la <- length(args) 
+  ixpath <- which(args %in% "path")
+  if (length(ixpath) == 1){
+     if (ixpath < la){
+         bpath <- args[ixpath + 1] 
+         message("base path set to ", bpath)
+     }
+  }
+  ixp    <- which(args %in% "p")  
+  if (length(ixp) == 1){
+     if (ixp < la){
+         p <- as.numeric(args[ixp + 1]) 
+         message("p set to ", p)
+     }
+  }
+  ixP    <- which(args %in% "P") 
+  if (length(ixP) == 1){
+     if (ixP < la){
+         if (ixP > max(ixp, ixpath)){
+             Ps <- as.numeric(args[(ixP + 1):(la)]) 
+         }else{
+             Ps <- as.numeric(args[ixP + 1])
+         }
+         message("P(s) set to ", Ps)
+     }
+  }
+}
 lambdaseq <- c(0, exp(10 * (1 - (nlambda:1)) / nlambda))
+message("starting experiments..")
 for (P in Ps) {
   for (k in c(1,2,3,4)) {
-    path <- paste0("simulations/",
+    path <- paste0(bpath,
                    "/p",
                    p,
                    "/P",
@@ -72,7 +99,7 @@ for (P in Ps) {
           system.time(
             resllb <- llBpath(
               Sigmahat,
-              eps = 1e-4,
+              eps = 1e-6,
               C = C0,
               maxIter = 5000,
               job = 11,
