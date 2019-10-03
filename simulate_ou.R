@@ -1,3 +1,10 @@
+args = commandArgs(trailingOnly=TRUE)
+if (length(args) == 0){ 
+   Ps <- c(10,12,15,20) 
+}else{
+   Ps <- as.numeric(args)
+}
+message("Ps = ", Ps)
 library(clggm)
 library(igraph)
 library(ggplot2)
@@ -7,13 +14,13 @@ source("functions/util.R")
 rescaleC <- FALSE
 lower <- FALSE
 p <- 10
-Ps <- c(10, 12, 15, 20, 25, 30, 35, 40)
+#Ps <- c(10, 12, 15, 20, 25, 30, 35, 40)
 rep <- 100
 nlambda <- 100
 lambdaseq <- c(0, exp(10 * (1 - (nlambda:1)) / nlambda))
 for (P in Ps) {
   for (k in c(1,2,3,4)) {
-    path <- paste0("simulationsNew/",
+    path <- paste0("simulations/",
                    "/p",
                    p,
                    "/P",
@@ -65,7 +72,7 @@ for (P in Ps) {
           system.time(
             resllb <- llBpath(
               Sigmahat,
-              eps = 1e-6,
+              eps = 1e-4,
               C = C0,
               maxIter = 5000,
               job = 11,
@@ -76,7 +83,7 @@ for (P in Ps) {
           system.time(
             resfrobenius <- lsBpath(
               Sigmahat,
-              eps = 1e-6,
+              eps = 1e-4,
               C = C0,
               maxIter = 5000,
               job = 11,
@@ -88,7 +95,7 @@ for (P in Ps) {
                                          lambda = lambdaseq))
         tlassoc <-
           system.time(reslassoc <- lassoB(cov(exper$data[1:N,1:p]), 
-                                          C = Ctrue,
+                                          C = Ctrue[1:p,1:p],
                                          lambda = lambdaseq))
         tglasso <- system.time(resglasso <- glassoB(Sigmahat,
                                                     lambda = lambdaseq * max(diag(Sigmahat))))

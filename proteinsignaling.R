@@ -79,7 +79,7 @@ B_A <- matrix(nrow = p, ncol = p,
 
 
 ########################################### REPETITIONS
-nreps <- 50
+nreps <- 100
 results_B <- sapply(1:nreps, function(rep){
   idx <- sample(1:nrow(dataall), size = nrow(dataall) / 10, replace = FALSE)
   SigmaTrain <- cor(dataall[idx,])
