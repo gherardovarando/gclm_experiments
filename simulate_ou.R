@@ -99,7 +99,7 @@ for (P in Ps) {
           system.time(
             resllb <- llBpath(
               Sigmahat,
-              eps = 1e-6,
+              eps = 1e-4,
               C = C0,
               maxIter = 5000,
               job = 11,

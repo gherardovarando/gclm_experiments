@@ -247,11 +247,14 @@ evaluatePathB <- function(results, B, nrecall = 100){
   roc <- roc[dim(roc)[1]:1,]
   roc <- rbind(c(0,0), roc, c(1,1))
   ##### interpolate precision over a fixed grid of recall values
-  cpr <- NA
+  cpr <- list(y = rep(NA, 100)) 
   if (length(unique(conf$recall)) > 1){
      xr <- seq(0,1,length.out = 100)
-     cpr <- approx(c(conf$recall), c(conf$precision), xout = xr) 
-  } 
+     cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, rule = 2) 
+  }
+#  else{
+#     xr <- seq(0,1,length.out = 100)
+#     cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, method = "constant")     } 
   #### 
   return(list(roc = roc, confusion = conf, cpr = cpr))
 }
@@ -297,11 +300,11 @@ glassoB <- function(Sigma, lambda = NULL){
 covthr <- function(Sigma, lambda = NULL){
   Sigma <- cov2cor(Sigma)
   if (is.null(lambda)){
-    lambda <- sort(unique(Sigma[lower.tri(Sigma)]))
+    lambda <- c(0,sort(unique(abs(Sigma[lower.tri(Sigma)]))))
   }
   lapply(lambda, function(thr){
-    B <- Sigma
-    B[B < thr] <- 0
+    B <- abs(Sigma)
+    B[B <= thr] <- 0
     list(B = sign(abs(B)), lambda = thr)
   })
 }

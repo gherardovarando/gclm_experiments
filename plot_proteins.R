@@ -1,4 +1,3 @@
-load("proteinsignaling/results.RData")
 source("functions/util.R")
 require(igraph)
 
@@ -18,33 +17,21 @@ layout <- matrix(nrow = 11, ncol = 2, byrow = TRUE,
                            3, 5  #JNK
                           )) 
 
-
-
-savegraphs(B_A, "plot/proteinsignaling/graphs/A/", 
-           layout = layout, names = nicenames )
-
-savegraphs(B_B, "plot/proteinsignaling/graphs/B/", 
-           layout = layout, names = nicenames )
-
-
-
-for (i in 1:dim(results_C)[3]){
-  Btmp <- apply(results_C[,,i,], 1:2, function(x) mean(sign(abs(x))))
-  savegraphs(Btmp,
-             paste0("plot/proteinsignaling/graphs/C/",i,"/"), 
-             layout = layout, names = nicenames )
+nreps <- 200
+############# collect results
+res <- array(dim = c(11,11,9,nreps))
+for (i in 1:9){
+  load(paste0("proteins/results",i, ".RData"))
+  res[,,i,] <- results[,,] 
 }
 
-B_C <- apply(results_C, MARGIN = c(1,2,3), function(x) {
-  mean(sign(abs(x)))
-}  )
 
-B_C <- apply(B_C, c(1,2), function(x) {
+B <- apply(apply(sign(abs(res)), c(1,2,3), mean), c(1,2), function(x) {
   mean(x > 0.5)
 })
 
-savegraphs(B_C, "plot/proteinsignaling/graphs/C/", 
-           layout = layout, names = nicenames )
+print(B)
+savegraphs(B, "plot/proteins/graphs/", layout = layout, names = nicenames )
 
 # ##### GRAPH FROM SACHS et al. 
 # names <- c("Raf", "Mek", "PLC", "PIP2", 

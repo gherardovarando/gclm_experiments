@@ -12,64 +12,12 @@ p <- 10
 algs <- c("loglik", "frobenius", "lasso", "lassoc", 
                      "glasso", "covthr")
 algsel <- c("loglik", "frobenius", "lasso", "glasso", "covthr") 
-restable <- array(dim = c(9, length(algs), length(ks), length(Ps), length(Ns), rep), 
-                  dimnames = list(stats = c("auroc", "maxacc", "maxf1", 
-                                            "maxbacc", "elapsed", "aucpr",
-                                            "indxEmpty", "minrecall",
-                                            "maxrecall"),
-                                  Algorithm = algs,
-                                  k = ks,
-                                  P = Ps,
-                                  N = Ns, 
-                                  rep = 1:rep), data = NA)
+
+load(paste0("simulations/results_p",p,".RData"))
 for (P in Ps){
     plotpath <- paste0("plot/simulations/","p",p , "/P" , P, "/" )
     dir.create(plotpath, showWarnings = FALSE, recursive = TRUE)
-    for (k in ks){
-      for (i in 1:rep){
-        filepath <- paste0("simulations/", "p",p, "/P", P , "/k", k,"/"
-                           , "rep", i, ".RData" )
-        load(filepath)
-        P <- paste0(P)
-        for (N in Ns){
-          npar <- sum(exper$B !=0 ) - p
-          evals <- lapply(results[[paste0(N)]], evaluatePathB, B = exper$B[1:p,1:p])
-          algs <- names(evals)
-          restable["auroc" ,algs,k,P,N,i] <- sapply(evals, function(x) 
-            AUROC(x$roc))
-          restable["maxacc",algs,k,P,N,i] <- sapply(evals, function(x){
-            ( 1 - (min(x$confusion$err) / (p*(p - 1)) ))  
-          })
-          restable["maxf1",algs,k,P,N,i] <- sapply(evals, function(x) 
-            max(x$confusion$f1) )
-          restable["maxbacc",algs,k,P,N,i] <- sapply(evals, function(x) 
-            max(x$confusion$bacc) )
-          restable["elapsed", algs, k, P, N, i] <- sapply(times[[paste0(N)]], 
-                                                       function(x) x[3])
-          restable["indxEmpty",algs,k,P,N,i] <- sapply(evals, function(x) 
-            min(which(x$confusion$npar == 0 ) ) )
-          restable["aucpr" ,algs,k,P,N,i] <- sapply(evals, function(x) 
-            AUCPR(x$confusion))
-          restable["minrecall" ,algs,k,P,N,i] <- sapply(evals, function(x) 
-            min(x$confusion$recall))
-          restable["maxrecall" ,algs,k,P,N,i] <- sapply(evals, function(x) 
-            max(x$confusion$recall))
-        }
-      }
-    }
-    
-    # if (all(restable["minrecall", , , ,] == 0)){
-    #   message("min recall ok")
-    # }else{
-    #   message("min recall problem")
-    # }
-    # 
-    # if (all(restable["maxrecall", , , , ] == 1)){
-    #   message("max recall ok")
-    # }else{
-    #   message("max recall problem")
-    # }
-    
+   
     avgrestable <- apply(restable[,,,P,,], MARGIN = 1:4, mean)
     
     df <- expand.grid(dimnames(avgrestable))
@@ -79,7 +27,7 @@ for (P in Ps){
     df$d <- as.numeric(df$k) / p
     df$N <- as.numeric(Ns)[as.numeric(df$N)]
     
-    selected <- c("maxacc", "maxf1", "auroc", "aucpr")
+    selected <- c("maxacc", "maxf1", "auroc", "aupr")
     
     df1 <- df[df$stats %in% selected,]
     df1 <- df1[df1$Algorithm %in% algsel, ]
@@ -116,6 +64,7 @@ for (P in Ps){
       message("saved plot p=",p, " P=", P)  
 }
 
+
 plotpath <- paste0("plot/simulations/" )
 N <- "3000"
 avgrestable <- apply(restable[,,,,N,], MARGIN = 1:4, mean)
@@ -123,8 +72,8 @@ df <- expand.grid(dimnames(avgrestable))
 df <- cbind(df,Y = (apply(df, 1, function(x){
   avgrestable[x[1], x[2], x[3], x[4]]
 })))
-df1 <- df[df$stats %in% selected,]
-df1 <- df1[df1$alg %in% algsel, ]
+df1 <- df[df$stats %in% c("aupr"),]
+df1 <- df1[df1$Algorithm %in% algsel, ]
 df1$k <- paste0("k=",df1$k)
 
 ggplot(df1, aes(x = P, y = Y, group = Algorithm, 
@@ -133,8 +82,8 @@ ggplot(df1, aes(x = P, y = Y, group = Algorithm,
              rows = vars(stats), 
              scales = "free_y") + 
   geom_path() + 
-  geom_hline(data = df2, 
-             aes(yintercept = Y), linetype = "dotted") +
+#  geom_hline(data = df2, 
+#             aes(yintercept = Y), linetype = "dotted") +
   theme_bw() + 
   scale_y_continuous(limits = function(x){
     x <- x + c(-0.0005, 0.0005) * x
@@ -144,11 +93,12 @@ ggplot(df1, aes(x = P, y = Y, group = Algorithm,
   }, breaks = function(x) {
     seq(x[1], x[2], length.out = 11)[c(2,4,6,8,10)]
   }, expand = expand_scale(0,0)) + 
-  theme(legend.position = "bottom", 
+  theme(legend.position = "none", 
         axis.title.y = element_blank(),
         axis.text.x = element_text(angle = 30)) + 
+        xlab("p'") + 
   ggsave(paste0("p", p,"N",N, ".pdf"), path = plotpath,
-         width = 6, height = 6, units = "in")
+         width = 6, height = 2, units = "in")
 
 
 

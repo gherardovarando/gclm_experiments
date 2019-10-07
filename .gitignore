@@ -1,6 +1,6 @@
 *.RData
-plot
-simulations
+plot/
+simulations/
 graphs/
 proteinsignaling/
 *.pdf
