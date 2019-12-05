@@ -29,6 +29,11 @@ for (P in Ps){
     
     selected <- c("maxacc", "maxf1", "auroc", "aupr")
     
+    if (paste0(P) == paste0(p)){
+      title <- NULL
+    }else{
+      title <- paste0("p' = ", P)
+    } 
     df1 <- df[df$stats %in% selected,]
     df1 <- df1[df1$Algorithm %in% algsel, ]
     df1$k <- paste0("k=",df1$k)
@@ -44,6 +49,7 @@ for (P in Ps){
                  aes(yintercept = Y), linetype = "dotted") +
       scale_x_log10() +
       theme_bw() + 
+      ggtitle(title) + 
       scale_y_continuous(limits = function(x){
         x <- x + c(-0.0005, 0.0005) * x
         x <- c(floor(x[1] * 10),
@@ -75,11 +81,12 @@ df <- cbind(df,Y = (apply(df, 1, function(x){
 df1 <- df[df$stats %in% c("aupr"),]
 df1 <- df1[df1$Algorithm %in% algsel, ]
 df1$k <- paste0("k=",df1$k)
+df1$P <- as.numeric(levels(df1$P))[as.numeric(df1$P)]
 
 ggplot(df1, aes(x = P, y = Y, group = Algorithm, 
                 color = Algorithm)) + 
   facet_grid(cols = vars(k), 
-             rows = vars(stats), 
+#             rows = vars(stats), 
              scales = "free_y") + 
   geom_path() + 
 #  geom_hline(data = df2, 
@@ -93,10 +100,11 @@ ggplot(df1, aes(x = P, y = Y, group = Algorithm,
   }, breaks = function(x) {
     seq(x[1], x[2], length.out = 11)[c(2,4,6,8,10)]
   }, expand = expand_scale(0,0)) + 
-  theme(legend.position = "none", 
-        axis.title.y = element_blank(),
+  theme(legend.position = "bottom", 
+#        axis.title.y = element_blank(),
         axis.text.x = element_text(angle = 30)) + 
         xlab("p'") + 
+        ylab("aupr") +  
   ggsave(paste0("p", p,"N",N, ".pdf"), path = plotpath,
          width = 6, height = 2, units = "in")
 

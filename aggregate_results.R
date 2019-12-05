@@ -74,7 +74,7 @@ for (P in Ps){
       message("computed p=",p, " P=", P)  
 }
 
-save(paste0(file = "simulations/results_p",p,".RData" ), list = c("restable"))
+save(file = paste0("simulations/results_p",p,".RData" ), list = c("restable"))
 
 
 
