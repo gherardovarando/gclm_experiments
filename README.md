@@ -31,8 +31,8 @@ and `plot_avgprc.R` to generate the same plots in the paper.
 
 ## Protein-signaling network
 
-First run the script `proteins.R` (or lunch parallele computations with 
+First run the script `proteins.R` (or lunch parallel computations with 
 `run_proteins.sh`) to generate the results. 
 
-The estimated graph can be optained running `plot_proteins.R`. 
+The estimated graph can be obtained running `plot_proteins.R`. 
 
