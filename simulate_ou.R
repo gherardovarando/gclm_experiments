@@ -71,20 +71,21 @@ for (P in Ps) {
       exper <- rOUinv(5000, Btrue, C = Ctrue)
       results <- list()
       times <- list()
-      for (N in c(50,
-                  100,
+      for (N in c(
+                 # 50,
+                #  100,
                   200,
-                  300,
-                  400,
+                #  300,
+                #  400,
                   500,
-                  600,
-                  700,
-                  800,
-                  900,
+               #   600,
+               #   700,
+               #   800,
+               #   900,
                   1000,
-                  2000,
-                  3000,
-                  4000,
+               #   2000,
+               #   3000,
+               #   4000,
                   5000)) {
         if (rescaleC) {
           C0 <- diag(p)
@@ -101,43 +102,44 @@ for (P in Ps) {
               Sigmahat,
               eps = 1e-4,
               C = C0,
-              maxIter = 5000,
+              maxIter = 100,
               job = 11,
               lambdas = 3 * lambdaseq
             )
           )
-        tfrobenius <-
-          system.time(
-            resfrobenius <- lsBpath(
-              Sigmahat,
-              eps = 1e-4,
-              C = C0,
-              maxIter = 5000,
-              job = 11,
-              lambdas = 3 * lambdaseq
-            )
-          )
-        tlasso <-
-          system.time(reslasso <- lassoB(Sigmahat, C = C0,
-                                         lambda = lambdaseq))
-        tlassoc <-
-          system.time(reslassoc <- lassoB(cov(exper$data[1:N,1:p]), 
-                                          C = Ctrue[1:p,1:p],
-                                         lambda = lambdaseq))
+#        tfrobenius <-
+#          system.time(
+#            resfrobenius <- lsBpath(
+#              Sigmahat,
+#              eps = 1e-4,
+#              C = C0,
+#              maxIter = 5000,
+#              job = 11,
+#              lambdas = 3 * lambdaseq
+#            )
+#          )
+#        tlasso <-
+#          system.time(reslasso <- lassoB(Sigmahat, C = C0,
+#                                         lambda = lambdaseq))
+#        tlassoc <-
+#          system.time(reslassoc <- lassoB(cov(exper$data[1:N,1:p]), 
+#                                          C = Ctrue[1:p,1:p],
+#                                         lambda = lambdaseq))
         tglasso <- system.time(resglasso <- glassoB(Sigmahat,
-                                                    lambda = lambdaseq * max(diag(Sigmahat))))
+                                                    lambda = lambdaseq * 
+                                                    max(diag(Sigmahat))))
         tcovthr <- system.time(rescovthr <- covthr(Sigmahat))
         times[[paste0(N)]] <-
           list(loglik = tllb,
-               frobenius = tfrobenius,
-               lasso = tlasso,
-               lassoc = tlassoc,
+             #  frobenius = tfrobenius,
+             #  lasso = tlasso,
+             #  lassoc = tlassoc,
                glasso = tglasso,
                covthr = tcovthr)
         results[[paste0(N)]] <- list(loglik = resllb,
-                                     frobenius = resfrobenius,
-                                     lasso = reslasso,
-                                     lassoc = reslassoc,
+                                   #  frobenius = resfrobenius,
+                                   #  lasso = reslasso,
+                                   #  lassoc = reslassoc,
                                      glasso = resglasso,
                                      covthr = rescovthr)
       }

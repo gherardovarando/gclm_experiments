@@ -1,3 +1,4 @@
+args = commandArgs(trailingOnly=TRUE)  
 library(ggplot2)
 source("functions/util.R")
 
@@ -9,9 +10,38 @@ ks <- c(1,2,3,4)
 Ps <- as.character(c(10, 12, 15, 20, 25, 30, 35, 40))
 n <- length(Ns)
 p <- 10
+bpath <- "simulations/"
 algs <- c("loglik", "frobenius", "lasso", "lassoc", 
                      "glasso", "covthr")
-algsel <- c("loglik", "frobenius", "lasso", "glasso", "covthr") 
+if (length(args) != 0){ 
+  message("arguments found, parsing...")
+  la <- length(args) 
+  ixpath <- which(args %in% "path")
+  if (length(ixpath) == 1){
+     if (ixpath < la){
+         bpath <- args[ixpath + 1] 
+         message("base path set to ", bpath)
+     }
+  }
+  ixp    <- which(args %in% "p")  
+  if (length(ixp) == 1){
+     if (ixp < la){
+         p <- as.numeric(args[ixp + 1]) 
+         message("p set to ", p)
+     }
+  }
+  ixP    <- which(args %in% "P") 
+  if (length(ixP) == 1){
+     if (ixP < la){
+         if (ixP > max(ixp, ixpath)){
+             Ps <- (args[(ixP + 1):(la)]) 
+         }else{
+             Ps <- (args[ixP + 1])
+         }
+         message("P(s) set to ", Ps)
+     }
+  }
+}
 restable <- array(dim = c(9, length(algs), length(ks), length(Ps), length(Ns), rep), 
                   dimnames = list(stats = c("auroc", "maxacc", "maxf1", 
                                             "maxbacc", "elapsed", "aupr",
@@ -26,7 +56,7 @@ restable <- array(dim = c(9, length(algs), length(ks), length(Ps), length(Ns), r
 for (P in Ps){
     for (k in ks){
       for (i in 1:rep){
-        filepath <- paste0("simulations/", "p",p, "/P", P , "/k", k,"/"
+        filepath <- paste0(bpath, "p",p, "/P", P , "/k", k,"/"
                            , "rep", i, ".RData" )
         load(filepath)
         P <- paste0(P)
