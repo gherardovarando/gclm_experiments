@@ -43,7 +43,7 @@ if (length(args) != 0){
      }
   }
 }
-lambdaseq <- c(0, exp(10 * (1 - (nlambda:1)) / nlambda))
+lambdaseq <- c(exp(10 * (1 - (nlambda:1)) / nlambda))
 message("starting experiments..")
 for (P in Ps) {
   for (k in c(1,2,3,4)) {
@@ -73,8 +73,8 @@ for (P in Ps) {
       times <- list()
       for (N in c(
                  # 50,
-                #  100,
-                  200,
+                  100,
+                #  200,
                 #  300,
                 #  400,
                   500,
@@ -113,14 +113,14 @@ for (P in Ps) {
 #              Sigmahat,
 #              eps = 1e-4,
 #              C = C0,
-#              maxIter = 5000,
+#              maxIter = 100,
 #              job = 11,
 #              lambdas = 3 * lambdaseq
 #            )
 #          )
-#        tlasso <-
-#          system.time(reslasso <- lassoB(Sigmahat, C = C0,
-#                                         lambda = lambdaseq))
+        tlasso <-
+          system.time(reslasso <- lassoB(Sigmahat, C = C0,
+                                         lambda = lambdaseq))
 #        tlassoc <-
 #          system.time(reslassoc <- lassoB(cov(exper$data[1:N,1:p]), 
 #                                          C = Ctrue[1:p,1:p],
@@ -132,13 +132,13 @@ for (P in Ps) {
         times[[paste0(N)]] <-
           list(loglik = tllb,
              #  frobenius = tfrobenius,
-             #  lasso = tlasso,
+               lasso = tlasso,
              #  lassoc = tlassoc,
                glasso = tglasso,
                covthr = tcovthr)
         results[[paste0(N)]] <- list(loglik = resllb,
-                                   #  frobenius = resfrobenius,
-                                   #  lasso = reslasso,
+                                   #   frobenius = resfrobenius,
+                                     lasso = reslasso,
                                    #  lassoc = reslassoc,
                                      glasso = resglasso,
                                      covthr = rescovthr)

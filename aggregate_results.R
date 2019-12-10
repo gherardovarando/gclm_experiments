@@ -1,11 +1,9 @@
 args = commandArgs(trailingOnly=TRUE)  
-library(ggplot2)
 source("functions/util.R")
 
 rep <- 100
-Ns <- as.character(c(50, 100, 200, 300, 400, 500,
-                     600, 700, 800, 900, 
-                     1000, 2000, 3000, 4000, 5000))
+Ns <- as.character(c(100,  500, 
+                     1000, 5000))
 ks <- c(1,2,3,4)
 Ps <- as.character(c(10, 12, 15, 20, 25, 30, 35, 40))
 n <- length(Ns)
@@ -104,7 +102,7 @@ for (P in Ps){
       message("computed p=",p, " P=", P)  
 }
 
-save(file = paste0("simulations/results_p",p,".RData" ), list = c("restable"))
+save(file = paste0(bpath , "results_p",p,".RData" ), list = c("restable"))
 
 
 
