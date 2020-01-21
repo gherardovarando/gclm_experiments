@@ -107,17 +107,17 @@ for (P in Ps) {
               lambdas = 3 * lambdaseq
             )
           )
-#        tfrobenius <-
-#          system.time(
-#            resfrobenius <- lsBpath(
-#              Sigmahat,
-#              eps = 1e-4,
-#              C = C0,
-#              maxIter = 100,
-#              job = 11,
-#              lambdas = 3 * lambdaseq
-#            )
-#          )
+        tfrobenius <-
+          system.time(
+            resfrobenius <- lsBpath(
+              Sigmahat,
+              eps = 1e-4,
+              C = C0,
+              maxIter = 100,
+              job = 11,
+              lambdas = 3 * lambdaseq
+            )
+          )
         tlasso <-
           system.time(reslasso <- lassoB(Sigmahat, C = C0,
                                          lambda = lambdaseq))
@@ -131,13 +131,13 @@ for (P in Ps) {
         tcovthr <- system.time(rescovthr <- covthr(Sigmahat))
         times[[paste0(N)]] <-
           list(loglik = tllb,
-             #  frobenius = tfrobenius,
+               frobenius = tfrobenius,
                lasso = tlasso,
              #  lassoc = tlassoc,
                glasso = tglasso,
                covthr = tcovthr)
         results[[paste0(N)]] <- list(loglik = resllb,
-                                   #   frobenius = resfrobenius,
+                                      frobenius = resfrobenius,
                                      lasso = reslasso,
                                    #  lassoc = reslassoc,
                                      glasso = resglasso,
