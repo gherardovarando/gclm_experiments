@@ -10,9 +10,10 @@ message("packages and util functions loaded correctly")
 rescaleC <- FALSE
 lower <- FALSE
 p <- 10
-Ps <- c(10, 12, 15, 20, 25, 30, 35, 40)
+Ps <- c(10)
 rep <- 100
 nlambda <- 100
+N <- 100
 bpath <- "simulations/"
 if (length(args) != 0){ 
   message("arguments found, parsing...")
@@ -31,6 +32,13 @@ if (length(args) != 0){
          message("p set to ", p)
      }
   }
+  ixN <- which(args %in% "N")
+  if (length(ixN) == 1){
+     if (ixp < la){
+         N <- as.numeric(args[ixN + 1]) 
+         message("N set to ", N)
+     }
+  }
   ixP    <- which(args %in% "P") 
   if (length(ixP) == 1){
      if (ixP < la){
@@ -43,7 +51,7 @@ if (length(args) != 0){
      }
   }
 }
-lambdaseq <- c(exp(10 * (1 - (nlambda:1)) / nlambda))
+lambdaseq <- c(exp(10 * ( - (nlambda:1)) / nlambda))
 message("starting experiments..")
 for (P in Ps) {
   for (k in c(1,2,3,4)) {
@@ -54,7 +62,9 @@ for (P in Ps) {
                    P,
                    "/k",
                    k,
-                   "/")
+                   "/N",
+                    N,
+                    "/")
     dir.create(path, showWarnings = FALSE, recursive = TRUE)
     d <- k / p
     for (r in 1:rep) {
@@ -68,25 +78,9 @@ for (P in Ps) {
           rdiag = rnorm
         )
       Ctrue <- diag(runif(P))
-      exper <- rOUinv(5000, Btrue, C = Ctrue)
+      exper <- rOUinv(N, Btrue, C = Ctrue)
       results <- list()
       times <- list()
-      for (N in c(
-                 # 50,
-                  100,
-                #  200,
-                #  300,
-                #  400,
-                  500,
-               #   600,
-               #   700,
-               #   800,
-               #   900,
-                  1000,
-               #   2000,
-               #   3000,
-               #   4000,
-                  5000)) {
         if (rescaleC) {
           C0 <- diag(p)
           Sigmahat <- cov(exper$data[1:N,1:p])
@@ -96,14 +90,16 @@ for (P in Ps) {
           C0 <- diag(p)
           Sigmahat <- cor(exper$data[1:N,1:p])
         }
+        Bstart <- -0.5 *  solve(Sigmahat)
         tllb <-
           system.time(
             resllb <- llBpath(
               Sigmahat,
-              eps = 1e-4,
+              eps = 1e-6,
               C = C0,
-              maxIter = 100,
-              job = 11,
+              B0 = Bstart,
+              maxIter = 1000,
+              job = 0,
               lambdas = 3 * lambdaseq
             )
           )
@@ -111,20 +107,18 @@ for (P in Ps) {
           system.time(
             resfrobenius <- lsBpath(
               Sigmahat,
-              eps = 1e-4,
+              eps = 1e-6,
               C = C0,
-              maxIter = 100,
-              job = 11,
+              B0 = Bstart,
+              maxIter = 1000,
+              job = 0,
               lambdas = 3 * lambdaseq
             )
           )
         tlasso <-
           system.time(reslasso <- lassoB(Sigmahat, C = C0,
                                          lambda = lambdaseq))
-#        tlassoc <-
-#          system.time(reslassoc <- lassoB(cov(exper$data[1:N,1:p]), 
-#                                          C = Ctrue[1:p,1:p],
-#                                         lambda = lambdaseq))
+
         tglasso <- system.time(resglasso <- glassoB(Sigmahat,
                                                     lambda = lambdaseq * 
                                                     max(diag(Sigmahat))))
@@ -133,16 +127,13 @@ for (P in Ps) {
           list(loglik = tllb,
                frobenius = tfrobenius,
                lasso = tlasso,
-             #  lassoc = tlassoc,
                glasso = tglasso,
                covthr = tcovthr)
         results[[paste0(N)]] <- list(loglik = resllb,
                                       frobenius = resfrobenius,
                                      lasso = reslasso,
-                                   #  lassoc = reslassoc,
                                      glasso = resglasso,
                                      covthr = rescovthr)
-      }
       name <- paste0("rep", r, ".RData")
       message("DONE rep ", r, "P = ", P,
               " p=", p, " k=", k)
@@ -155,6 +146,7 @@ for (P in Ps) {
           "p",
           "d",
           "P",
+          "N",
           "lower",
           "rescaleC"
         )
