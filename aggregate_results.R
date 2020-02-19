@@ -2,13 +2,13 @@ args = commandArgs(trailingOnly=TRUE)
 source("functions/util.R")
 
 rep <- 100
-Ns <- as.character(100)
+Ns <- as.character(1000)
 ks <- c(1,2,3,4)
 Ps <- as.character(c(10, 12, 15, 20, 25, 30, 35, 40))
 n <- length(Ns)
 p <- 10
 bpath <- "simulations/"
-algs <- c("loglik", "frobenius", "lasso", 
+algs <- c("loglik", "frobenius", "pnll", "lasso", 
                      "glasso", "covthr")
 if (length(args) != 0){ 
   message("arguments found, parsing...")

@@ -51,7 +51,7 @@ if (length(args) != 0){
      }
   }
 }
-lambdaseq <- c(exp(10 * (1 - (nlambda:1)) / nlambda))
+lambdaseq <- c(exp(10 * ( - (nlambda:1)) / nlambda))
 message("starting experiments..")
 for (P in Ps) {
   for (k in c(1,2,3,4)) {
@@ -95,60 +95,19 @@ for (P in Ps) {
           system.time(
             resllb <- llBpath(
               Sigmahat,
-              eps = 1e-6,
+              eps = 1e-5,
               C = C0,
               B0 = Bstart,
               maxIter = 100,
-              job = 11,
-              lambdas = 2 * lambdaseq
+              job = 0,
+              lambdas = 3 * lambdaseq
             )
           )
-        tfrobenius <-
-          system.time(
-            resfrobenius <- lsBpath(
-              Sigmahat,
-              eps = 1e-6,
-              C = C0,
-              B0 = Bstart,
-              maxIter = 100,
-              job = 11,
-              lambdas = 2 * lambdaseq
-            )
-          )
-        tpnll <-
-          system.time(
-            respnll <- pnllpath(
-              Sigmahat,
-              eps = 1e-6,
-              C = C0,
-              B0 = Bstart,
-              maxIter = 100,
-              intitr = 100,
-              job = 11,
-              lambdas = 2 * lambdaseq,
-              lambdac = 0.1
-            )
-          )
-        tlasso <-
-          system.time(reslasso <- lassoB(Sigmahat, C = C0,
-                                         lambda = lambdaseq))
-
-        tglasso <- system.time(resglasso <- glassoB(Sigmahat,
-                                                    lambda = lambdaseq * 
-                                                    max(diag(Sigmahat))))
         tcovthr <- system.time(rescovthr <- covthr(Sigmahat))
         times[[paste0(N)]] <-
           list(loglik = tllb,
-               frobenius = tfrobenius,
-               pnll = tpnll,
-               lasso = tlasso,
-               glasso = tglasso,
                covthr = tcovthr)
         results[[paste0(N)]] <- list(loglik = resllb,
-                                     frobenius = resfrobenius,
-                                     pnll = respnll,
-                                     lasso = reslasso,
-                                     glasso = resglasso,
                                      covthr = rescovthr)
       name <- paste0("rep", r, ".RData")
       message("DONE rep ", r, "P = ", P,

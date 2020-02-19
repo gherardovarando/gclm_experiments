@@ -1,24 +1,23 @@
 source("functions/util.R")
 
 rep <- 100
-N <- 3000
+N <- 1000
 ks <- c(1,2,3,4)
 P <- 10
 p <- 10
-algs <- c("loglik", "frobenius", "lasso", "lassoc", 
+algs <- c("loglik", "frobenius", "lasso",  
                      "glasso", "covthr")
-algsel <- c("loglik", "frobenius", "lasso", "glasso", "covthr") 
 restable <- array(dim = c(100, length(algs), length(ks), rep), 
                   dimnames = list(recall = 1:100,
                                   Algorithm = algs,
                                   k = ks,
                                   rep = 1:rep), data = NA)
  
-    plotpath <- paste0("plot/simulations/","p",p , "/P" , P, "/" )
+    plotpath <- paste0("plot/simulations/","p",p , "/P" , P, "/N",N,"/"  )
     dir.create(plotpath, showWarnings = FALSE, recursive = TRUE)
     for (k in ks){
       for (i in 1:rep){
-        filepath <- paste0("simulations/", "p",p, "/P", P , "/k", k,"/",
+        filepath <- paste0("simulations/", "p",p, "/P", P , "/k", k,"/N", N, "/", 
                        "rep", i, ".RData" )
         load(filepath)
         P <- paste0(P)
@@ -37,7 +36,7 @@ restable <- array(dim = c(100, length(algs), length(ks), rep),
     df <- cbind(df,precision = (apply(df, 1, function(x){
       avgrestable[x[1], x[2], x[3]]
     })))
-    df <- df[df$Algorithm %in% algsel, ]
+    df <- df[df$Algorithm %in% algs, ]
     df$k <- paste0("k=",df$k)
     df$recall <- seq(0,1,length.out = 100)
     ggplot(df, aes(x = recall, y = precision, group = Algorithm, 

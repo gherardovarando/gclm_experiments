@@ -4,8 +4,8 @@ library(ggplot2)
 rep <- 100
 N <- 1000
 ks <- c(1,2,3,4)
-Ps <- as.character(c(10, 12, 15, 20))
-p <- 10
+ps <- 10 * (1:5)
+algs <- c("loglik", "covthr")
 bpath <- "simulations/"
 if (length(args) != 0){ 
   message("arguments found, parsing...")
@@ -43,35 +43,54 @@ if (length(args) != 0){
      }
   }
 }
+p = ps[1]
+P = p
 load(paste0(bpath, "results_p",p,".RData"))
 
-plotpath <- paste0("plot/", bpath, "p",p , "/N", N, "/" )
-dir.create(plotpath, showWarnings = FALSE, recursive = TRUE)
-
-avgrestable <- apply(restable[,,,,paste0(N),], MARGIN = 1:4, mean)
+avgrestable <- apply(restable[,,,paste0(p),paste0(N),], MARGIN = 1:3, mean)
 
 df <- expand.grid(dimnames(avgrestable))
 df <- cbind(df,Y = (apply(df, 1, function(x){
-  avgrestable[x[1], x[2], x[3], x[4]]
+  avgrestable[x[1], x[2], x[3]]
 })))
 df$d <- as.numeric(df$k) / p
-df$P <- df$P
+df$p <- as.numeric(p)
 
-selected <- c("maxbacc", "maxacc", "maxf1", "auroc", "aupr")
+for (p in ps[-1]){
+    
+load(paste0(bpath, "results_p",p,".RData"))
+
+
+avgrestable <- apply(restable[,,,paste0(p),paste0(N),], MARGIN = 1:3, mean)
+
+dft <- expand.grid(dimnames(avgrestable))
+dft <- cbind(dft,Y = (apply(df, 1, function(x){
+  avgrestable[x[1], x[2], x[3]]
+})))
+dft$d <- as.numeric(dft$k) / p
+dft$p <- as.numeric(p)
+df <- rbind(df, dft) 
+}
+
+plotpath <- paste0("plot/", bpath, "N", N, "/" )
+dir.create(plotpath, showWarnings = FALSE, recursive = TRUE)
+
+
+selected <- c("maxf1", "auroc", "aupr")
 
  
 df1 <- df[df$stats %in% selected,]
 df1$k <- paste0("k=",df1$k)
 df2 <- data.frame(k = paste0("k=",ks), 
-                  stats = "maxacc", Y =  1 - ks / p)
-ggplot(df1, aes(x = P, y = Y, group = Algorithm, 
+                  stats = "maxbacc", Y =  1 - ks / p)
+ggplot(df1, aes(x = p, y = Y, group = Algorithm, 
                 color = Algorithm)) + 
   facet_grid(cols = vars(k), 
              rows = vars(stats), 
              scales = "free_y") + 
   geom_path() + 
-  #geom_hline(data = df2, 
-  #           aes(yintercept = Y), linetype = "dotted") +
+#  geom_hline(data = df2, 
+#             aes(yintercept = Y), linetype = "dotted") +
   #scale_x_log10() +
   theme_bw() + 
  # ggtitle(title) + 
@@ -83,7 +102,6 @@ ggplot(df1, aes(x = P, y = Y, group = Algorithm,
   }, breaks = function(x) {
     seq(x[1], x[2], length.out = 11)[c(2,4,6,8,10)]
   }, expand = expand_scale(0,0)) + 
-  xlab("p") + 
   theme(legend.position = "bottom", 
         axis.title.y = element_blank(),
         axis.text.x = element_text(angle = 30),
@@ -91,7 +109,7 @@ ggplot(df1, aes(x = P, y = Y, group = Algorithm,
         legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt"),
         plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt")) + 
   ggsave(paste0("p", p,"N",N, ".pdf"), path = plotpath,
-         width = 6, height = 6, units = "in")
+         width = 6, height = 3, units = "in")
 
   message("saved plot")  
 

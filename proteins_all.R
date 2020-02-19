@@ -20,9 +20,12 @@ extension <- ".csv"
 basepath <- "data/Sachs/Data Files/"
 completepaths <- paste0(basepath, 1:9, ". ", filenames, extension)
 
+bpath <- "proteins/all/"
+dir.create(bpath, showWarnings = FALSE, recursive = TRUE)
+
 ###################### arguments
-conditions <- 1:9
 k <- 2
+conditions <- 1:9
 if (length(args) != 0){ 
   message("arguments found, parsing...")
   la <- length(args) 
@@ -53,14 +56,13 @@ if (length(args) != 0){
   }
 }
 
-######################### creating dir
 
-dir.create(bpath, showWarnings = FALSE, recursive = TRUE)
 ########################## LOADING DATA 
 
 datalist <- lapply(
-  completepaths,
-  FUN = function(fn) {
+  conditions,
+  FUN = function(cond) {
+    fn <- completepaths[cond]
     tmp <- read.csv(fn)
     colnames(tmp) <- tolower(colnames(tmp))
     return(tmp)
@@ -69,21 +71,26 @@ datalist <- lapply(
 
 p <- ncol(datalist[[1]])
 
-message("data loaded correctly")
+
+all <- datalist[[1]]
+if (length(datalist) > 1){
+for (cond in 2:length(datalist)){
+  all <- rbind(all, datalist[[cond]])
+}
+}
+
+message("data loaded correctly ", dim(all))
 
 #############################################
 
 nreps <-200
 results<- array(data = NA, dim = c(11, 11, nreps))
-for (i in conditions){
-   message("estimating for condition ",i, "/", length(conditions))
-   D <- datalist[[i]]
-   for (rep in 1:nreps){
-     message("condition ", i, "  rep ",rep, "/", nreps)
-     ixs <- sample(1:nrow(D), size = nrow(D)/k, replace = FALSE)
-     SigmaTrain <- cov(D[ixs,])
+ for (rep in 1:nreps){
+     message("  rep ",rep, "/", nreps)
+     ixs <- sample(1:nrow(all), size = nrow(all)/k, replace = FALSE)
+     SigmaTrain <- cov(all[ixs,])
      dd <- diag(1 / sqrt(diag(SigmaTrain)))
-     SigmaTest <-  cov(D[-ixs,])
+     SigmaTest <-  cov(all[-ixs,])
      ### estimate path 
      resultspath <- llBpath(cov2cor(SigmaTrain), 
                             lambdas = 3*exp((-(100:1))/5) ,
@@ -106,8 +113,7 @@ for (i in conditions){
      bidx <- which.min(tmp)
      results[,, rep] <- resultspath[[bidx]]$B
    }
-   save(file = paste0(bpath,"results", i,".RData"), list = c( "results"))
-}
+   save(file = paste0(bpath,"results_all.RData"), list = c( "results"))
 
 
 

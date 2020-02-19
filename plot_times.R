@@ -1,20 +1,20 @@
 source("functions/util.R")
 
 rep <- 100
-N <- 5000
+N <- 1000
 ks <- c(1,2,3,4)
-algsel <- c("loglik", "lasso", "glasso", "covthr") 
+algsel <- c("loglik", "frobenius", "lasso", "glasso", "covthr") 
 
 alldf <- data.frame()
-for (p in c(10,20,30,40,50,60,70,80)){
+for (p in 10*(1:5)){
      load(paste0("simulations/results_p",p,".RData"))
      avgrestable <- apply(restable, MARGIN = c(1,2,3,5), mean)
      df <- expand.grid(dimnames(avgrestable))
      df <- cbind(df,Y = (apply(df, 1, function(x){
            avgrestable[x[1], x[2], x[3], x[4]]
      })))
-     df1 <- df[df$stats %in% c("elapsed") & df$N == "5000",]
-     df1 <- df1[df1$Algorithm %in% algsel, ]
+     df1 <- df[df$stats %in% c("elapsed") & df$N == "1000",]
+#     df1 <- df1[df1$Algorithm %in% algsel, ]
      df1$k <- paste0("k=",df1$k)
      df1$N <- as.numeric(levels(df1$N))[as.numeric(df1$N)]
      df1$p <- p

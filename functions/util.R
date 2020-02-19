@@ -248,13 +248,13 @@ evaluatePathB <- function(results, B, nrecall = 100){
   roc <- rbind(c(0,0), roc, c(1,1))
   ##### interpolate precision over a fixed grid of recall values
   cpr <- list(y = rep(NA, 100)) 
-  #if (length(unique(conf$recall)) > 1){
-     #xr <- seq(0,1,length.out = 100)
-     #cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, rule = 2) 
-  #}
-#  else{
-#     xr <- seq(0,1,length.out = 100)
-#     cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, method = "constant")     } 
+  if (length(unique(conf$recall)) > 1){
+     xr <- seq(0,1,length.out = 100)
+     cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, rule = 2) 
+  }
+  else{
+     xr <- seq(0,1,length.out = 100)
+     cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, method = "constant")     } 
   #### 
   return(list(roc = roc, confusion = conf, cpr = cpr))
 }
@@ -278,10 +278,10 @@ lassoB <- function(Sigma, C = diag(nrow(Sigma)),
                 lambda = lambda,
                 nlambda = nlambda,
                 penalty.factor = 1 - diag(p))
-    obj <- lapply(length(tmp$lambda):1, function(i){
+    obj <- c(list(B = Sigma, lambda = 0), lapply(length(tmp$lambda):1, function(i){
     list(B = matrix(nrow =p, ncol = p, data = tmp$beta[,i]), 
          lambda = tmp$lambda[i])
-  })
+     }))
     attr(obj, "jerr") <- tmp$jerr
     attr(obj, "nulldev") <- tmp$nulldev
     return(obj)
@@ -291,9 +291,10 @@ lassoB <- function(Sigma, C = diag(nrow(Sigma)),
 library(glasso)
 glassoB <- function(Sigma, lambda = NULL){
   gpath <- glassopath(Sigma, rholist = lambda, trace = FALSE)
-  return(lapply(1:length(gpath$rholist), FUN = function(i){
+  return(c(list(B = Sigma, lambda = 0) ,
+     lapply(1:length(gpath$rholist), FUN = function(i){
     list(B = gpath$wi[,,i], lambda = gpath$rholist[i])
-  }))
+  })))
 }
 
 
