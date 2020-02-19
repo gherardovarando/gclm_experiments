@@ -274,11 +274,12 @@ lassoB <- function(Sigma, C = diag(nrow(Sigma)),
   tmp <- glmnet(AA, y = -c(C),
                 intercept = FALSE,
                 standardize = FALSE,
-                lambda.min.ratio = 0.00001,
+                lambda.min.ratio = 1e-6,
                 lambda = lambda,
                 nlambda = nlambda,
                 penalty.factor = 1 - diag(p))
-    obj <- c(list(B = Sigma, lambda = 0), lapply(length(tmp$lambda):1, function(i){
+    obj <- c(list(list(B = Sigma, lambda = 0)),
+	     lapply(length(tmp$lambda):1, function(i){
     list(B = matrix(nrow =p, ncol = p, data = tmp$beta[,i]), 
          lambda = tmp$lambda[i])
      }))
@@ -291,7 +292,7 @@ lassoB <- function(Sigma, C = diag(nrow(Sigma)),
 library(glasso)
 glassoB <- function(Sigma, lambda = NULL){
   gpath <- glassopath(Sigma, rholist = lambda, trace = FALSE)
-  return(c(list(B = Sigma, lambda = 0) ,
+  return(c(list(list(B = Sigma, lambda = 0)) ,
      lapply(1:length(gpath$rholist), FUN = function(i){
     list(B = gpath$wi[,,i], lambda = gpath$rholist[i])
   })))
