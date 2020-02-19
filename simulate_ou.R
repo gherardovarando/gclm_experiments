@@ -1,11 +1,5 @@
 args = commandArgs(trailingOnly=TRUE)  
 
-library(clggm)
-library(igraph)
-library(ggplot2)
-source("functions/util.R")
-
-message("packages and util functions loaded correctly")
 
 rescaleC <- FALSE
 lower <- FALSE
@@ -51,6 +45,15 @@ if (length(args) != 0){
      }
   }
 }
+
+devtools::install_github("gherardovarando/clggm", ref = "attempt")
+library(clggm)
+library(igraph)
+library(ggplot2)
+source("functions/util.R")
+
+message("packages and util functions loaded correctly")
+
 lambdaseq <- c(exp(10 * (1 - (nlambda:1)) / nlambda))
 message("starting experiments..")
 for (P in Ps) {
