@@ -99,8 +99,8 @@ for (P in Ps) {
               C = C0,
               B0 = Bstart,
               maxIter = 100,
-              job = 11,
-              lambdas = 2 * lambdaseq
+              job = 0,
+              lambdas = 3 * lambdaseq
             )
           )
         tfrobenius <-
@@ -111,8 +111,8 @@ for (P in Ps) {
               C = C0,
               B0 = Bstart,
               maxIter = 100,
-              job = 11,
-              lambdas = 2 * lambdaseq
+              job = 0,
+              lambdas = 3 * lambdaseq
             )
           )
         tpnll <-
@@ -123,10 +123,9 @@ for (P in Ps) {
               C = C0,
               B0 = Bstart,
               maxIter = 100,
-              intitr = 100,
-              job = 11,
-              lambdas = 2 * lambdaseq,
-              lambdac = 0.1
+              job = 0,
+              lambdas = 3 * lambdaseq,
+              lambdac = 0.01
             )
           )
         tlasso <-
