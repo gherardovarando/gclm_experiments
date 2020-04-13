@@ -1,6 +1,6 @@
 args = commandArgs(trailingOnly=TRUE)  
 
-library(clggm)
+library(gclm)
 library(igraph)
 source("functions/util.R")
 
@@ -83,7 +83,7 @@ message("data loaded correctly ", dim(all))
 
 #############################################
 
-nreps <-200
+nreps <-100
 results<- array(data = NA, dim = c(11, 11, nreps))
  for (rep in 1:nreps){
      message("  rep ",rep, "/", nreps)
@@ -92,21 +92,24 @@ results<- array(data = NA, dim = c(11, 11, nreps))
      dd <- diag(1 / sqrt(diag(SigmaTrain)))
      SigmaTest <-  cov(all[-ixs,])
      ### estimate path 
-     resultspath <- llBpath(cov2cor(SigmaTrain), 
-                            lambdas = 3*exp((-(100:1))/5) ,
-                            eps = 1e-6, job = 0, maxIter = 5000)
+     resultspath <- gclm.path(cov2cor(SigmaTrain), 
+                             B = - 0.5 * solve(cov2cor(SigmaTrain)), 
+                            lambdac = 0.01,
+                            lambdas = 2*exp((-(100:1))/10) ,
+                            eps = 1e-6, job = 0, maxIter = 100)
      ### fit MLE to all path
      resultspath <- lapply(resultspath, function(res) {
-       proxgradllB(
+       gclm(
          cov2cor(SigmaTrain),
          B = res$B,
          C = res$C,
          lambda = 0,
+         lambdac = 0,
          eps = 1e-10,
          job = 10
        )
      })
-     ### compute minus loglik
+#     ### compute minus loglik
      tmp <- sapply(resultspath, function(res) {
        mll(solve(res$Sigma), dd %*% SigmaTest %*% dd)
      })

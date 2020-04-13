@@ -1,7 +1,7 @@
 args = commandArgs(trailingOnly=TRUE)  
 source("functions/util.R")
 
-rep <- 100
+rep <- 100 
 Ns <- as.character(1000)
 ks <- c(1,2,3,4)
 Ps <- as.character(c(10, 12, 15, 20, 25, 30, 35, 40))
@@ -9,7 +9,7 @@ n <- length(Ns)
 p <- 10
 bpath <- "simulations/"
 algs <- c("loglik", "frobenius", "pnll", "lasso", 
-                     "glasso", "covthr")
+                     "glasso", "covthr") 
 if (length(args) != 0){ 
   message("arguments found, parsing...")
   la <- length(args) 
@@ -53,6 +53,7 @@ restable <- array(dim = c(9, length(algs), length(ks), length(Ps), length(Ns), r
 for (P in Ps){
     for (k in ks){
       for (N in Ns){
+       if (k == 4) rep <- 30
       for (i in 1:rep){
         filepath <- paste0(bpath, "p",p, "/P", P , "/k", k,"/N", N ,"/", 
                            "rep", i, ".RData" )

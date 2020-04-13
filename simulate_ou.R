@@ -1,7 +1,6 @@
 args = commandArgs(trailingOnly=TRUE)  
 
 
-rescaleC <- FALSE
 lower <- FALSE
 p <- 10
 Ps <- c(10)
@@ -46,8 +45,7 @@ if (length(args) != 0){
   }
 }
 
-devtools::install_github("gherardovarando/clggm", ref = "attempt")
-library(clggm)
+library(gclm)
 library(igraph)
 library(ggplot2)
 source("functions/util.R")
@@ -84,23 +82,15 @@ for (P in Ps) {
       exper <- rOUinv(N, Btrue, C = Ctrue)
       results <- list()
       times <- list()
-        if (rescaleC) {
-          C0 <- diag(p)
-          Sigmahat <- cov(exper$data[1:N,1:p])
-          diag(C0) <- diag(C0) / diag(Sigmahat)
-          Sigmahat <- cov2cor(Sigmahat)
-        } else{
-          C0 <- diag(p)
-          Sigmahat <- cor(exper$data[1:N,1:p])
-        }
-        Bstart <- -0.5 *  solve(Sigmahat)
+      C0 <- diag(p)
+      Sigmahat <- cor(exper$data[1:N,1:p])
+      Bstart <- -0.5 *  solve(Sigmahat)
         tllb <-
           system.time(
-            resllb <- llBpath(
+            resllb <- gclm.path(
               Sigmahat,
               eps = 1e-6,
-              C = C0,
-              B0 = Bstart,
+              B = Bstart,
               maxIter = 100,
               job = 0,
               lambdas = 3 * lambdaseq
@@ -108,25 +98,24 @@ for (P in Ps) {
           )
         tfrobenius <-
           system.time(
-            resfrobenius <- lsBpath(
+            resfrobenius <- gclm.path(
               Sigmahat,
               eps = 1e-6,
-              C = C0,
-              B0 = Bstart,
+              B = Bstart,
               maxIter = 100,
               job = 0,
-              lambdas = 3 * lambdaseq
+              lambdas = 3 * lambdaseq,
+              lambdac = -1,
+              loss = "frobenius"
             )
           )
         tpnll <-
           system.time(
-            respnll <- pnllpath(
+            respnll <- gclm.path(
               Sigmahat,
               eps = 1e-6,
-              C = C0,
-              B0 = Bstart,
+              B = Bstart,
               maxIter = 100,
-              job = 0,
               lambdas = 3 * lambdaseq,
               lambdac = 0.01
             )
@@ -165,8 +154,7 @@ for (P in Ps) {
           "d",
           "P",
           "N",
-          "lower",
-          "rescaleC"
+          "lower"
         )
       )
     }

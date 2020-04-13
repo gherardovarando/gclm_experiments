@@ -5,7 +5,7 @@ N <- 1000
 ks <- c(1,2,3,4)
 P <- 10
 p <- 10
-algs <- c("loglik", "frobenius", "lasso",  
+algs <- c("loglik", "frobenius", "pnll", "lasso",  
                      "glasso", "covthr")
 restable <- array(dim = c(100, length(algs), length(ks), rep), 
                   dimnames = list(recall = 1:100,
@@ -13,11 +13,11 @@ restable <- array(dim = c(100, length(algs), length(ks), rep),
                                   k = ks,
                                   rep = 1:rep), data = NA)
  
-    plotpath <- paste0("plot/simulations/","p",p , "/P" , P, "/N",N,"/"  )
+    plotpath <- paste0("plot/simulations0/","p",p , "/P" , P, "/N",N,"/"  )
     dir.create(plotpath, showWarnings = FALSE, recursive = TRUE)
     for (k in ks){
       for (i in 1:rep){
-        filepath <- paste0("simulations/", "p",p, "/P", P , "/k", k,"/N", N, "/", 
+        filepath <- paste0("simulations0/", "p",p, "/P", P , "/k", k,"/N", N, "/", 
                        "rep", i, ".RData" )
         load(filepath)
         P <- paste0(P)
