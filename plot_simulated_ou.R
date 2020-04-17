@@ -4,7 +4,7 @@ library(ggplot2)
 rep <- 100
 N <- 1000
 ks <- c(1,2,3,4)
-Ps <- as.character(c(10, 12, 15, 20))
+Ps <- as.character(c(10, 12, 15, 20, 25, 30))
 p <- 10
 bpath <- "simulations/"
 if (length(args) != 0){ 

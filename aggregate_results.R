@@ -4,7 +4,7 @@ source("functions/util.R")
 rep <- 100 
 Ns <- as.character(1000)
 ks <- c(1,2,3,4)
-Ps <- as.character(c(10, 12, 15, 20, 25, 30, 35, 40))
+Ps <- as.character(c(10, 12, 15, 20, 25, 30))
 n <- length(Ns)
 p <- 10
 bpath <- "simulations/"
@@ -53,7 +53,6 @@ restable <- array(dim = c(9, length(algs), length(ks), length(Ps), length(Ns), r
 for (P in Ps){
     for (k in ks){
       for (N in Ns){
-       if (k == 4) rep <- 30
       for (i in 1:rep){
         filepath <- paste0(bpath, "p",p, "/P", P , "/k", k,"/N", N ,"/", 
                            "rep", i, ".RData" )
@@ -82,8 +81,6 @@ for (P in Ps){
             min(x$confusion$recall))
           restable["maxrecall" ,algs,k,P,N,i] <- sapply(evals, function(x) 
             max(x$confusion$recall))
-
-           
         }
       }
     }

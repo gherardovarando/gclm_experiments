@@ -248,13 +248,13 @@ evaluatePathB <- function(results, B, nrecall = 100){
   roc <- rbind(c(0,0), roc, c(1,1))
   ##### interpolate precision over a fixed grid of recall values
   cpr <- list(y = rep(NA, 100)) 
-  if (length(unique(conf$recall)) > 1){
-     xr <- seq(0,1,length.out = 100)
-     cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, rule = 2) 
-  }
-  else{
-     xr <- seq(0,1,length.out = 100)
-     cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, method = "constant")     } 
+  #if (length(unique(conf$recall)) > 1){
+  #   xr <- seq(0,1,length.out = 100)
+  #   cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, rule = 2) 
+  #}
+  #else{
+  #   xr <- seq(0,1,length.out = 100)
+  #   cpr <- approx(c(conf$recall), c(conf$precision), xout = xr, method = "constant")     } 
   #### 
   return(list(roc = roc, confusion = conf, cpr = cpr))
 }
