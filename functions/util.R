@@ -196,11 +196,15 @@ TPR <- function(x, y){
 AUCPR <- function(x){
   temp <- 0
   n <- nrow(x)
-  for (i in 1:(n - 1)){
+    for (i in 1:(n-1)){
     ## trapezoidal quadrature rule
     temp <- temp + (x$precision[i + 1] + x$precision[i]) * 
       ( x$recall[i] - x$recall[i + 1]) / 2
   }
+  temp <- temp + (1 + x$precision[n]) * 
+      ( x$recall[n] - 0) / 2
+
+
   return(temp)
 }
 
