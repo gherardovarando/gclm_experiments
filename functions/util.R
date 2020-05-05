@@ -226,6 +226,7 @@ evaluatePathB <- function(results, B, nrecall = 100){
   ix <- lower.tri(B) | upper.tri(B)
   conf <- as.data.frame(t(sapply(results, function(res) c(lambda = res$lambda, 
                                     npar = sum(res$B[ix]!=0),
+                                    iter = res$iter,
                                     fp = sum(res$B[ix] !=0 & B[ix] ==0),
                                     tp = sum(res$B[ix] !=0 & B[ix] !=0) ,
                                     fn = sum(res$B[ix] ==0 & B[ix] !=0),

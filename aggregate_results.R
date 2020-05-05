@@ -27,6 +27,13 @@ if (length(args) != 0){
          message("p set to ", p)
      }
   }
+  ixn    <- which(args %in% "N")  
+  if (length(ixn) == 1){
+     if (ixn < la){
+         Ns <- args[ixn + 1] 
+         message("N set to ", Ns)
+     }
+  }
   ixP    <- which(args %in% "P") 
   if (length(ixP) == 1){
      if (ixP < la){
@@ -39,11 +46,11 @@ if (length(args) != 0){
      }
   }
 }
-restable <- array(dim = c(9, length(algs), length(ks), length(Ps), length(Ns), rep), 
+restable <- array(dim = c(10, length(algs), length(ks), length(Ps), length(Ns), rep), 
                   dimnames = list(stats = c("auroc", "maxacc", "maxf1", 
                                             "maxbacc", "elapsed", "aupr",
                                             "indxEmpty", "minrecall",
-                                            "maxrecall"),
+                                            "maxrecall", "iter"),
                                   Algorithm = algs,
                                   k = ks,
                                   P = Ps,
@@ -81,6 +88,8 @@ for (P in Ps){
             min(x$confusion$recall))
           restable["maxrecall" ,algs,k,P,N,i] <- sapply(evals, function(x) 
             max(x$confusion$recall))
+           restable["iter" ,algs,k,P,N,i] <- sapply(evals, function(x) 
+sum(x$confusion$iter ))
         }
       }
     }
@@ -100,7 +109,7 @@ for (P in Ps){
       message("computed p=",p, " P=", P)  
 }
 
-save(file = paste0(bpath , "results_p",p,".RData" ), list = c("restable"))
+save(file = paste0(bpath , "results_p",p,"_N", N ,".RData" ), list = c("restable"))
 
 
 

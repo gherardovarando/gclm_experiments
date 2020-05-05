@@ -43,7 +43,7 @@ if (length(args) != 0){
      }
   }
 }
-load(paste0(bpath, "results_p",p,".RData"))
+load(paste0(bpath, "results_p",p,"_N", N ,".RData"))
 
 plotpath <- paste0("plot/", bpath, "p",p , "/N", N, "/" )
 dir.create(plotpath, showWarnings = FALSE, recursive = TRUE)

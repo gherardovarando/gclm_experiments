@@ -95,8 +95,8 @@ results<- array(data = NA, dim = c(11, 11, nreps))
      resultspath <- gclm.path(cov2cor(SigmaTrain), 
                              B = - 0.5 * solve(cov2cor(SigmaTrain)), 
                             lambdac = 0.01,
-                            lambdas = 2*exp((-(100:1))/10) ,
-                            eps = 1e-6, job = 0, maxIter = 100)
+                            lambdas = 6 * 10^seq(-4,0, length = 100) ,
+                            eps = 1e-6, job = 0, maxIter = 1000)
      ### fit MLE to all path
      resultspath <- lapply(resultspath, function(res) {
        gclm(
@@ -104,7 +104,7 @@ results<- array(data = NA, dim = c(11, 11, nreps))
          B = res$B,
          C = res$C,
          lambda = 0,
-         lambdac = 0,
+         lambdac = -1,
          eps = 1e-10,
          job = 10
        )

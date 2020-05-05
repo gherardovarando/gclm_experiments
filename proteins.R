@@ -87,9 +87,9 @@ for (i in conditions){
      ### estimate path 
      resultspath <- gclm.path(cov2cor(SigmaTrain), 
                             B = - 0.5 * solve(cov2cor(SigmaTrain)),
-                            lambdas = 2*exp((-(100:1))/5) ,
+                            lambdas = 10 * 10^seq(-4,0,length = 100) ,
                             lambdac = 0.01, 
-                            eps = 1e-6, job = 0, maxIter = 100)
+                            eps = 1e-6, job = 0, maxIter = 1000)
      ### fit MLE to all path
      resultspath <- lapply(resultspath, function(res) {
        gclm(
@@ -97,9 +97,10 @@ for (i in conditions){
          B = res$B,
          C = res$C,
          lambda = 0,
-         lambdac = 0,
+         lambdac = -1,
          eps = 1e-10,
-         job = 10
+         job = 10,
+         maxIter = 1000
        )
      })
      ### compute minus loglik

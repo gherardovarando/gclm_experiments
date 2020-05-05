@@ -95,7 +95,7 @@ for (P in Ps) {
               B = Bstart,
               maxIter = 1000,
               job = 0,
-              lambdas =  lambdaseq,
+              lambdas =  6*lambdaseq,
               lambdac = -1
             )
           )
@@ -109,7 +109,7 @@ for (P in Ps) {
               B = Bstart,
               maxIter = 1000,
               job = 0,
-              lambdas = lambdaseq,
+              lambdas = 6*lambdaseq,
               lambdac = -1,
               loss = "frobenius"
             )
@@ -123,7 +123,7 @@ for (P in Ps) {
               B = Bstart,
               maxIter = 1000,
               job = 0,
-              lambdas = lambdaseq,
+              lambdas = 6*lambdaseq,
               lambdac = 0.01
             )
           )

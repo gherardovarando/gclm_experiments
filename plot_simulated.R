@@ -35,17 +35,17 @@ if (length(args) != 0){
   if (length(ixP) == 1){
      if (ixP < la){
          if (ixP > max(ixp, ixpath)){
-             Ps <- (args[(ixP + 1):(la)]) 
+             ps <- (args[(ixP + 1):(la)]) 
          }else{
-             Ps <- (args[ixP + 1])
+             ps <- (args[ixP + 1])
          }
-         message("P(s) set to ", Ps)
+         message("ps set to ", ps)
      }
   }
 }
 p = ps[1]
 P = p
-load(paste0(bpath, "results_p",p,".RData"))
+load(paste0(bpath, "results_p",p,"_N", N , ".RData"))
 
 avgrestable <- apply(restable[,,,paste0(p),paste0(N),], MARGIN = 1:2, mean)
 
@@ -58,7 +58,7 @@ df$p <- as.numeric(p)
 
 for (p in ps[-1]){
     
-load(paste0(bpath, "results_p",p,".RData"))
+load(paste0(bpath, "results_p",p,"_N", N , ".RData"))
 
 
 avgrestable <- apply(restable[,,,paste0(p),paste0(N),], MARGIN = 1:2, mean, 
