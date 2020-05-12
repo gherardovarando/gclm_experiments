@@ -7,7 +7,7 @@ algsel <- c("loglik", "frobenius", "pnll", "lasso", "glasso", "covthr")
 
 alldf <- data.frame()
 itrdf <- data.frame()
-for (p in 10*c(1, 2, 3)){
+for (p in 10*c(1, 2, 3, 4, 5, 10)){
      load(paste0("simulations/results_p",p,"_N", N , ".RData"))
      avgrestable <- apply(restable, MARGIN = c(1,2,5), mean, na.rm = TRUE)
      df <- expand.grid(dimnames(avgrestable))
@@ -36,7 +36,7 @@ levels(itrdf$Algorithm)[levels(df$Algorithm)== "frobenius"] <- "frob-inf"
 
 
 
-plotpath <- paste0("plot/simulations/" )
+plotpath <- paste0("plot/simulations" )
 
 ggplot(alldf, aes(x = p, y = Y, group = Algorithm, 
                 color = Algorithm)) + 

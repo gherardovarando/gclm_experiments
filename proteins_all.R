@@ -83,14 +83,14 @@ message("data loaded correctly ", dim(all))
 
 #############################################
 
-nreps <-100
+nreps <-200
 results<- array(data = NA, dim = c(11, 11, nreps))
  for (rep in 1:nreps){
      message("  rep ",rep, "/", nreps)
      ixs <- sample(1:nrow(all), size = nrow(all)/k, replace = FALSE)
-     SigmaTrain <- cov(all[ixs,])
+     SigmaTrain <- cov(all[-ixs,])
      dd <- diag(1 / sqrt(diag(SigmaTrain)))
-     SigmaTest <-  cov(all[-ixs,])
+     SigmaTest <-  cov(all[ixs,])
      ### estimate path 
      resultspath <- gclm.path(cov2cor(SigmaTrain), 
                              B = - 0.5 * solve(cov2cor(SigmaTrain)), 

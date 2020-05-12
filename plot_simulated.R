@@ -4,7 +4,7 @@ library(ggplot2)
 rep <- 100
 N <- 1000
 ks <- c(1,2,3,4)
-ps <- c(10 * (1:3))
+ps <- c(10 * (1:5), 100)
 algs <- c("loglik", "pnll", "covthr")
 bpath <- "simulations/"
 if (length(args) != 0){ 

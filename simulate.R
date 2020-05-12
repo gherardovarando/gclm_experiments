@@ -93,7 +93,7 @@ for (P in Ps) {
               Sigmahat,
               eps = 1e-4,
               B = Bstart,
-              maxIter = 1000,
+              maxIter = 100,
               job = 0,
               lambdas =  6*lambdaseq,
               lambdac = -1
@@ -107,7 +107,7 @@ for (P in Ps) {
               Sigmahat,
               eps = 1e-4,
               B = Bstart,
-              maxIter = 1000,
+              maxIter = 100,
               job = 0,
               lambdas = 6*lambdaseq,
               lambdac = -1,
@@ -121,7 +121,7 @@ for (P in Ps) {
               Sigmahat,
               eps = 1e-4,
               B = Bstart,
-              maxIter = 1000,
+              maxIter = 100,
               job = 0,
               lambdas = 6*lambdaseq,
               lambdac = 0.01

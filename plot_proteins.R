@@ -27,7 +27,7 @@ for (i in 1:9){
 
 
 B <- apply(apply(sign(abs(res)), c(1,2,3), mean), c(1,2), function(x) {
-  mean(x >= 0.5)
+  mean(x > 0.85)
 })
 
 print(B)

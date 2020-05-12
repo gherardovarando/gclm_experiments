@@ -73,7 +73,7 @@ message("data loaded correctly")
 
 #############################################
 
-nreps <-100
+nreps <-200
 results<- array(data = NA, dim = c(11, 11, nreps))
 for (i in conditions){
    message("estimating for condition ",i, "/", length(conditions))
@@ -87,7 +87,7 @@ for (i in conditions){
      ### estimate path 
      resultspath <- gclm.path(cov2cor(SigmaTrain), 
                             B = - 0.5 * solve(cov2cor(SigmaTrain)),
-                            lambdas = 10 * 10^seq(-4,0,length = 100) ,
+                            lambdas = 6 * 10^seq(-4,0,length = 100) ,
                             lambdac = 0.01, 
                             eps = 1e-6, job = 0, maxIter = 1000)
      ### fit MLE to all path
