@@ -1,11 +1,13 @@
-# Simulations and Experiments for TITLE HERE 
+# Simulations and Experiments for Graphical Continuous Lyapunov Models (2020)  
 
 This repository contains the files for replicating the simulations
-and the example in TITLE 
+and the examples in Graphical Continuous Lyapunov Models, G. Varando and N. R. Hansen 
+2020.   
 
 ## Required packages
 
 * `glmnet`
+* `glasso`
 * `igraph`
 * `MASS`
 * `ggplot2`
@@ -15,24 +17,25 @@ and the example in TITLE
 ### Run the simulations
 
 To run the simulations just move in the directory and run the R script 
-`simulate_ou.R`. 
+`simulate.R`. 
 The simulations can take up to a couple of days, depending on the
 machine.
-If you have access to a computing machine you can lunch parallel jobs 
-using the script `run_simulate.sh`.  
+The exact simulations run in the paper are the ones 
+that can be executed from the script `run_simulate.sh`. 
 
 ### Plot results 
 
 Before plotting the results you need to compute the evaluations and 
-aggregate the results with the R script `aggregate_results.R`. 
+aggregate the results with the R script `aggregate_results.R` or directly 
+using the script `run_aggreagate.sh`.  
 
-Then you can lunch the plotting scripts `plot_simulated_ou.R`
-and `plot_avgprc.R` to generate the same plots in the paper.  
+Then you can lunch the plotting scripts `plot_simulated.R`,
+`plot_marginalized.R` and `plot_times.R` 
+ to generate the same plots as in the paper.  
 
 ## Protein-signaling network
 
-First run the script `proteins.R` (or lunch parallel computations with 
-`run_proteins.sh`) to generate the results. 
+First run the script `proteins.R` to generate the results. 
 
-The estimated graph can be obtained running `plot_proteins.R`. 
+The estimated graphs can be obtained running `plot_proteins.R`. 
 
