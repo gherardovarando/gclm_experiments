@@ -19,19 +19,13 @@ layout <- matrix(nrow = 11, ncol = 2, byrow = TRUE,
 
 nreps <- 200
 ############# collect results
-res <- array(dim = c(11,11,9,nreps))
-for (i in 1:9){
-  load(paste0("proteins/results",i, ".RData"))
-  res[,,i,] <- results[,,] 
-}
+load(paste0("proteins/all/results_all.RData"))
 
 
-B <- apply(apply(sign(abs(res)), c(1,2,3), mean), c(1,2), function(x) {
-  mean(x > 0.85)
-})
+B <- apply(sign(abs(results)), c(1,2), mean)
 
 print(B)
-savegraphs(B, "plot/proteins/graphs/", layout = layout, names = nicenames )
+savegraphs(B, "plot/proteins_all/graphs/", layout = layout, names = nicenames )
 
 # ##### GRAPH FROM SACHS et al. 
 # names <- c("Raf", "Mek", "PLC", "PIP2", 

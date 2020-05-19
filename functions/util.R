@@ -1,3 +1,8 @@
+library(glmnet)
+library(glasso)
+library(igraph)
+library(ggplot2)
+
 #' Difference graph
 #'
 #' @param B1 matrix
@@ -265,8 +270,6 @@ evaluatePathB <- function(results, B, nrecall = 100){
 }
 
 
-#library(lars)
-library(glmnet)
 lassoB <- function(Sigma, C = diag(nrow(Sigma)), 
                    lambda = NULL, nlambda = 100){
   p <- nrow(Sigma)
@@ -294,7 +297,6 @@ lassoB <- function(Sigma, C = diag(nrow(Sigma)),
 }
 
 
-library(glasso)
 glassoB <- function(Sigma, lambda = NULL){
   gpath <- glassopath(Sigma, rholist = lambda, trace = FALSE)
   return(c(list(list(B = Sigma, lambda = 0)) ,
@@ -317,10 +319,6 @@ covthr <- function(Sigma, lambda = NULL){
 }
 
 
-
-
-
-library(ggplot2)
 
 plotROC <- function(roc){
   ggplot(data=as.data.frame(roc), aes(x= FPR, y= TPR)) +

@@ -37,5 +37,6 @@ Then you can lunch the plotting scripts `plot_simulated.R`,
 
 First run the script `proteins.R` to generate the results. 
 
-The estimated graphs can be obtained running `plot_proteins.R`. 
+The estimated graphs can be obtained running `plot_proteins.R`. Graphs are saved
+both as pdf and as tikz format.   
 
