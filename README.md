@@ -25,7 +25,7 @@ To run the simulations just move in the directory and run the R script
 `simulate.R`. 
 The simulations can take up to a couple of days, depending on the
 machine.
-The script `simualte.R` accepts arguments if executed from a terminal 
+The script `simulate.R` accepts arguments if executed from a terminal 
 with `Rscript` to allow for a simple parallelization of the simulations 
 using, for example, `tmux`. 
 
