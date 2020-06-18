@@ -6,11 +6,16 @@ and the examples in Graphical Continuous Lyapunov Models, G. Varando and N. R. H
 
 ## Required packages
 
+The following packages must be installed: 
+ 
+* `gclm`
 * `glmnet`
 * `glasso`
 * `igraph`
 * `MASS`
 * `ggplot2`
+
+All packages are available from CRAN. 
 
 ## Simulations
 
@@ -20,7 +25,11 @@ To run the simulations just move in the directory and run the R script
 `simulate.R`. 
 The simulations can take up to a couple of days, depending on the
 machine.
-The exact simulations run in the paper are the ones 
+The script `simualte.R` accepts arguments if executed from a terminal 
+with `Rscript` to allow for a simple parallelization of the simulations 
+using, for example, `tmux`. 
+
+The exact simulations as in the paper are the ones 
 that can be executed from the script `run_simulate.sh`. 
 
 ### Plot results 
@@ -29,7 +38,7 @@ Before plotting the results you need to compute the evaluations and
 aggregate the results with the R script `aggregate_results.R` or directly 
 using the script `run_aggreagate.sh`.  
 
-Then you can lunch the plotting scripts `plot_simulated.R`,
+Then you can execute the plotting scripts `plot_simulated.R`,
 `plot_marginalized.R` and `plot_times.R` 
  to generate the same plots as in the paper.  
 
