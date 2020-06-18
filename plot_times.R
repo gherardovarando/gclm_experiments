@@ -59,8 +59,8 @@ ggplot(alldf, aes(x = p, y = Y, group = Algorithm,
   theme(legend.position = "none", 
     #    axis.title.y = element_blank(),
         axis.text.x = element_text(angle = 30)) + 
-  scale_y_log10() +  
-  ylab("sec.") +  
+  scale_y_log10(breaks = c(0.01, 1, 100) +  
+  ylab("seconds") +  
   ggsave(paste0("times", ".pdf"), path = plotpath,
          width = 3, height = 2, units = "in")
 
